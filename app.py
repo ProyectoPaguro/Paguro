@@ -61,7 +61,19 @@ print(">>> SECRET_KEY set? ->", bool(app.config.get("SECRET_KEY")))
 # db_path = os.path.join(app.instance_path, "database.db")
 # app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + db_path
 # app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# ---- Base de datos (SQLite) ----
+# Si tienes un Disk en Render montado en /var/data úsalo; si no, usa la carpeta instance.
+DB_DIR = "/var/data" if os.path.isdir("/var/data") else app.instance_path
+os.makedirs(DB_DIR, exist_ok=True)
+
+DB_PATH = os.path.join(DB_DIR, "database.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
 db = SQLAlchemy(app)
+
+print(">>> DB file:", DB_PATH)
 
 # crea tablas si no existen
 with app.app_context():
