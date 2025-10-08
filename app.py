@@ -614,7 +614,7 @@ def producto_editar(producto_id):
             p.cantidad_actual = float(request.form.get('cantidad_actual'))
         db.session.commit()
         flash('Producto actualizado ✅', 'success')
-        return redirect(url_for('produccion_view'))
+        return redirect(url_for('produccion'))
     return render_template('editar_producto.html', producto=p)
 
 @app.route('/productos/<int:producto_id>/eliminar', methods=['POST'])
@@ -630,7 +630,7 @@ def producto_eliminar(producto_id):
 
 @app.route('/movimiento-produccion', methods=['GET', 'POST'])
 @login_required
-def movimiento_produccion_view():
+def movimiento_produccion():
     productos = Producto.query.order_by(Producto.nombre.asc()).all()
     if request.method == 'POST':
         tipo = request.form.get('tipo')  # Entrada / Salida
