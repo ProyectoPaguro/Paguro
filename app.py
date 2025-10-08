@@ -267,11 +267,8 @@ def tareas_agregar():
 @app.context_processor
 def inject_active_path():
     from flask import request
-    p = getattr(request, "path", "")  # ruta actual, p.ej. "/inventario"
-    return {
-        "active_path": p,  # por si usas 'active_path'
-        "ap": p,           # por si tu base.html usa 'ap'
-    }
+    p = getattr(request, "path", "")
+    return {"active_path": p, "ap": p}
 
 @app.post("/tareas/<int:tarea_id>/completar")
 @login_required
@@ -534,7 +531,9 @@ def export_inventario():
                      download_name='inventario.xlsx',
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
-@app.route('/export/movimientos.xlsx', endpoint='export_movimientos')
+app.add_url_rule('/export/movimientos.xlsx',
+    endpoint='export_movimientos',
+    view_func=app.view_functions['export_movs_insumos'])
 @login_required
 @require_roles('admin')
 def export_movs_insumos():
@@ -702,14 +701,12 @@ def historial_produccion():
 # --- Compatibilidad con nombres antiguos de endpoints ---
 # Si alguna vista/plantilla aún llama url_for('produccion_view'), etc.,
 # mapeamos esos nombres al endpoint actual.
-app.add_url_rule(
-    '/produccion',
+app.add_url_rule('/produccion',
     endpoint='produccion_view',
     view_func=app.view_functions['produccion']
 )
 
-app.add_url_rule(
-    '/movimiento-produccion',
+app.add_url_rule( '/movimiento-produccion',
     endpoint='movimiento_produccion_view',
     view_func=app.view_functions['movimiento_produccion']
 )
@@ -723,7 +720,9 @@ app.add_url_rule(
 # -----------------------------------------------------------------------------
 # Página de últimos movimientos (insumos)
 # -----------------------------------------------------------------------------
-@app.route('/movimientos', endpoint='movimientos')
+@app.route('/movimientos', 
+    endpoint='movimientos'
+ view_func=app.view_functions['movimiento_insumo'])
 @login_required
 def movimientos():
     movs = (db.session.query(Movimiento, Insumo)
@@ -800,11 +799,7 @@ def login():
         flash('Credenciales incorrectas ❌', 'danger')
         return render_template('login.html'), 401
     return render_template('login.html')
-@app.context_processor
-def inject_active_path():
-    from flask import request
-    p = getattr(request, "path", "")
-    return {"active_path": p, "ap": p}
+
 @app.route("/_routes")
 def _routes():
     out = []
