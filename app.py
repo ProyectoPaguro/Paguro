@@ -38,26 +38,29 @@ from openpyxl.utils import get_column_letter
 # -----------------------------------------------------------------------------
 # app.py
 import os
-import secrets           # <-- añade esto
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-
-
-app = Flask(__name__, instance_relative_config=True)
 app = Flask(__name__, instance_relative_config=True)
 
-# 🔐 Clave de sesión
-app.config["SECRET_KEY"] = (
-    os.environ.get("SECRET_KEY")           # en Render: define SECRET_KEY en Settings → Environment
-    or "4a1c2c621b7e5a8bcecd7b778763856f"   # para desarrollo local
-)
+# --- SECRET KEY (antes de cualquier uso de session/flash/login_manager) ---
+_env_secret = os.environ.get("SECRET_KEY")
+if not _env_secret:
+    try:
+        _env_secret = os.urandom(24).hex()
+    except Exception:
+        _env_secret = "dev-secret-key-change-me"
 
-os.makedirs(app.instance_path, exist_ok=True)
+app.config["SECRET_KEY"] = _env_secret
+app.secret_key = _env_secret
 
-db_path = os.path.join(app.instance_path, "database.db")
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + db_path
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# DEBUG (puedes dejarlo por ahora; verifica en Logs de Render que salga True)
+print(">>> SECRET_KEY set? ->", bool(app.config.get("SECRET_KEY")))
 
+# --- el resto de tu config ya como estaba ---
+# por ejemplo:
+# db_path = os.path.join(app.instance_path, "database.db")
+# app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + db_path
+# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 # crea tablas si no existen
