@@ -598,7 +598,7 @@ def crear_producto():
         db.session.add(p)
         db.session.commit()
         flash('Producto creado ✅', 'success')
-        return redirect(url_for('produccion_view'))
+        return redirect(url_for('produccion'))
     return render_template('producto_nuevo.html')
 
 @app.route('/productos/<int:producto_id>/editar', methods=['GET', 'POST'])
@@ -626,7 +626,7 @@ def producto_eliminar(producto_id):
     db.session.delete(p)
     db.session.commit()
     flash('Producto eliminado 🗑️', 'warning')
-    return redirect(url_for('produccion_view'))
+    return redirect(url_for('produccion'))
 
 @app.route('/movimiento-produccion', methods=['GET', 'POST'])
 @login_required
@@ -657,7 +657,7 @@ def movimiento_produccion_view():
         db.session.add(mov)
         db.session.commit()
         flash('Movimiento registrado ✅', 'success')
-        return redirect(url_for('produccion_view'))
+        return redirect(url_for('produccion'))
 
     return render_template('movimiento_produccion.html', productos=productos)
 
