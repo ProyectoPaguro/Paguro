@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titulo %}Iniciar sesión{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+  <div class="col-md-4">
+    <h2 class="text-primary mb-4 text-center">🔐 Iniciar sesión</h2>
+
+    <form method="POST" class="card p-3 shadow-sm">
+      <label class="form-label">Correo electrónico</label>
+      <input type="email" name="email" class="form-control mb-2" placeholder="Correo electrónico" required>
+
+      <label class="form-label">Contraseña</label>
+      <input type="password" name="password" class="form-control" placeholder="Contraseña" required>
+
+      <button type="submit" class="btn btn-primary w-100 mt-3">Entrar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titulo %}Agregar Producto{% endblock %}
+
+{% block contenido %}
+<h2 class="text-success mb-3">➕ Agregar nuevo producto</h2>
+
+<form action="/productos" method="POST" class="card p-3 shadow-sm">
+  <label class="form-label">Nombre del producto</label>
+  <input type="text" name="nombre" class="form-control mb-2" required
+         value="{{ nombre|default('') }}">
+
+  <label class="form-label">Acabado del producto</label>
+  <input type="text" name="acabado" class="form-control mb-2" required
+         value="{{ acabado|default('') }}">
+
+  <label class="form-label">Cantidad inicial</label>
+  <input type="text" name="cantidad" class="form-control mb-2" required
+         placeholder="Ej: 10 o 10.5"
+         value="{{ cantidad|default('') }}">
+
+  <label class="form-label">Bodega</label>
+  <input type="text" name="bodega" class="form-control mb-3" required
+         value="{{ bodega|default('') }}">
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="/produccion" class="btn btn-secondary">Volver</a>
+  </div>
+</form>
+{% endblock %}

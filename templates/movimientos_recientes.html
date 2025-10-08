@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block titulo %}Movimientos{% endblock %}
+
+{% block contenido %}
+<h1 class="mb-4 text-primary">Movimientos recientes</h1>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead class="table-dark">
+          <tr>
+            <th>Fecha</th>
+            <th>Insumo</th>
+            <th>Tipo</th>
+            <th>Cantidad</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m,i in movs %}
+          <tr>
+            <td>{{ m.fecha.strftime("%Y-%m-%d %H:%M") }}</td>
+            <td>{{ i.nombre }}</td>
+            <td>{{ m.tipo }}</td>
+            <td>{{ m.cantidad }} {{ i.unidad }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-center text-muted">Sin movimientos</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

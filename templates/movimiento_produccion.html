@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titulo %}Movimiento Producción{% endblock %}
+
+{% block contenido %}
+<h2 class="text-primary mb-3">🔄 Registrar movimiento de producción</h2>
+
+<form method="POST" class="card p-3 shadow-sm">
+  <label class="form-label">Producto</label>
+  <select name="producto" class="form-select mb-2" required>
+    <option value="">Selecciona un producto</option>
+    {% for p in productos %}
+    <option value="{{ p.id }}">{{ p.nombre }} - {{ p.acabado }} ({{ p.cantidad_actual }})</option>
+    {% endfor %}
+  </select>
+
+  <label class="form-label">Tipo de movimiento</label>
+  <select name="tipo" class="form-select mb-2" required>
+    <option>Entrada</option>
+    <option>Salida</option>
+  </select>
+
+  <label class="form-label">Cantidad</label>
+  <input type="number" step="0.01" name="cantidad" class="form-control mb-3" required>
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">Guardar movimiento</button>
+    <a href="/produccion" class="btn btn-secondary">Volver</a>
+  </div>
+</form>
+{% endblock %}

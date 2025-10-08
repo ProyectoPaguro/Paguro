@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block titulo %}Producción{% endblock %}
+
+{% block contenido %}
+<h1 class="mb-4 text-primary">Producción</h1>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div></div>
+  {% if current_user.is_authenticated and current_user.rol == 'admin' %}
+    <a href="{{ url_for('crear_producto') }}" class="btn btn-primary btn-sm">Nuevo producto</a>
+  {% endif %}
+</div>
+
+<div class="table-responsive">
+  <table class="table table-sm table-bordered align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Nombre</th>
+        <th>Acabado</th>
+        <th class="text-end">Cantidad</th>
+        <th>Bodega</th>
+        <th style="width:180px;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in productos %}
+      <tr>
+        <td>{{ p.nombre }}</td>
+        <td>{{ p.acabado }}</td>
+        <td class="text-end">{{ p.cantidad_actual }}</td>
+        <td>{{ p.bodega }}</td>
+        <td class="text-nowrap">
+          {% if current_user.is_authenticated and current_user.rol == 'admin' %}
+            <a class="btn btn-sm btn-outline-secondary"
+               href="{{ url_for('producto_editar', producto_id=p.id) }}">Editar</a>
+            <form class="d-inline" method="POST"
+                  action="{{ url_for('producto_eliminar', producto_id=p.id) }}"
+                  onsubmit="return confirm('¿Eliminar este producto?');">
+              <button class="btn btn-sm btn-outline-danger">Eliminar</button>
+            </form>
+          {% else %}
+            <span class="text-muted">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="text-center text-muted">Sin productos registrados</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

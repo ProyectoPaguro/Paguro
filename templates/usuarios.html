@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block titulo %}Usuarios{% endblock %}
+
+{% block contenido %}
+<h2 class="text-warning mb-3">👥 Gestión de usuarios</h2>
+
+<table class="table table-bordered table-striped shadow-sm">
+  <thead class="table-dark">
+    <tr>
+      <th>Nombre</th>
+      <th>Email</th>
+      <th>Rol actual</th>
+      <th>Cambiar rol</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in usuarios %}
+    <tr>
+      <td>{{ u.nombre }}</td>
+      <td>{{ u.email }}</td>
+      <td>
+        <span class="badge {% if u.rol=='admin' %}bg-success{% else %}bg-secondary{% endif %}">
+          {{ u.rol|capitalize }}
+        </span>
+      </td>
+      <td>
+        <form action="/usuarios/{{ u.id }}/rol" method="POST" class="d-inline">
+          <input type="hidden" name="rol" value="admin">
+          <button class="btn btn-sm btn-outline-success" {% if u.rol=='admin' %}disabled{% endif %}>Hacer Admin</button>
+        </form>
+        <form action="/usuarios/{{ u.id }}/rol" method="POST" class="d-inline ms-1">
+          <input type="hidden" name="rol" value="operario">
+          <button class="btn btn-sm btn-outline-secondary" {% if u.rol=='operario' %}disabled{% endif %}>Hacer Operario</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="text-center text-muted">No hay usuarios</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

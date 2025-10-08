@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titulo %}Agregar Insumo{% endblock %}
+
+{% block contenido %}
+<h2 class="text-success mb-3">➕ Agregar nuevo insumo</h2>
+
+<form action="/insumos" method="POST" class="card p-3 shadow-sm">
+  <label class="form-label">Nombre del insumo</label>
+  <input type="text" name="nombre" class="form-control mb-2" required>
+
+  <label class="form-label">Unidad de medida</label>
+  <input type="text" name="unidad" class="form-control mb-2" placeholder="Ej.: kg, unidades, litros" required>
+
+  <label class="form-label">Cantidad inicial</label>
+  <input type="number" step="0.01" name="cantidad" class="form-control mb-2" required>
+
+  <label class="form-label">Bodega</label>
+  <input type="text" name="bodega" class="form-control mb-3" placeholder="Principal, Norte, etc." required>
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="/inventario" class="btn btn-secondary">Volver</a>
+  </div>
+</form>
+{% endblock %}

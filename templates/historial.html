@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block titulo %}Historial de movimientos{% endblock %}
+
+{% block contenido %}
+<h2 class="text-secondary mb-3">🕓 Historial de movimientos</h2>
+
+<form method="GET" class="card p-3 shadow-sm mb-3">
+  <div class="row g-2">
+    <div class="col-md-4">
+      <label class="form-label">Insumo</label>
+      <select name="insumo_id" class="form-select">
+        <option value="">Todos</option>
+        {% for i in insumos %}
+          <option value="{{ i.id }}" {% if sel_insumo_id == i.id %}selected{% endif %}>{{ i.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Tipo</label>
+      <select name="tipo" class="form-select">
+        <option value="" {% if sel_tipo=='' %}selected{% endif %}>Todos</option>
+        <option {% if sel_tipo=='Entrada' %}selected{% endif %}>Entrada</option>
+        <option {% if sel_tipo=='Salida' %}selected{% endif %}>Salida</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Desde</label>
+      <input type="date" name="desde" value="{{ sel_desde }}" class="form-control">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Hasta</label>
+      <input type="date" name="hasta" value="{{ sel_hasta }}" class="form-control">
+    </div>
+    <div class="col-md-2 d-flex align-items-end gap-2">
+      <button class="btn btn-primary w-100">Filtrar</button>
+      <a href="/historial" class="btn btn-outline-secondary w-100">Limpiar</a>
+    </div>
+  </div>
+</form>
+
+<table class="table table-striped table-bordered shadow-sm">
+  <thead class="table-dark">
+    <tr>
+      <th>Fecha</th>
+      <th>Insumo</th>
+      <th>Tipo</th>
+      <th>Cantidad</th>
+      <th>Unidad</th>
+      <th>Bodega</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for m, i in movs %}
+    <tr>
+      <td>{{ m.fecha.strftime("%Y-%m-%d %H:%M") }}</td>
+      <td>{{ i.nombre }}</td>
+      <td>{{ m.tipo }}</td>
+      <td>{{ m.cantidad }}</td>
+      <td>{{ i.unidad }}</td>
+      <td>{{ i.bodega }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="text-center text-muted">No hay movimientos con esos filtros</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

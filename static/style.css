@@ -1,0 +1,38 @@
+body { background-color: #f5f7fa; font-family: "Segoe UI", Arial, sans-serif; }
+.navbar { background-color: #0d6efd !important; }
+.navbar .nav-link.active { font-weight: 600; }
+.card { border-radius: 14px; }
+.btn { border-radius: 10px; font-weight: 500; }
+.table th { background-color: #212529; color: #fff; }
+.alert { padding: .6rem .75rem; }
+footer { font-size: .9rem; color: #6c757d; }
+/* Subnav fija y limpia */
+.sticky-subnav { position: sticky; top: 56px; z-index: 1020; }
+.nav-pills .nav-link { border-radius: 999px; }
+.navbar .nav-link.active { font-weight: 600; }
+/* Pastillas de resumen rápidas */
+.kpi-pill{
+  display:inline-block;
+  padding:.35rem .6rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size:.85rem;
+  border:1px solid rgba(0,0,0,.06);
+}
+
+/* Cabecera sutil para separar secciones dentro de la tarjeta */
+.section-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:.25rem .5rem .25rem 0;
+  margin-bottom:.25rem;
+  border-bottom:1px dashed rgba(0,0,0,.08);
+}
+
+/* Mesa compacta para tareas */
+.table-tasks td, .table-tasks th{
+  vertical-align: middle;
+}
+
+

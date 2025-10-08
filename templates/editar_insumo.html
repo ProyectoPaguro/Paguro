@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titulo %}Editar insumo{% endblock %}
+
+{% block contenido %}
+<h2 class="text-primary mb-3">✏️ Editar insumo</h2>
+
+<form method="POST" class="card p-3 shadow-sm">
+  <label class="form-label">Nombre</label>
+  <input type="text" name="nombre" value="{{ insumo.nombre }}" class="form-control mb-2" required>
+
+  <label class="form-label">Unidad</label>
+  <input type="text" name="unidad" value="{{ insumo.unidad }}" class="form-control mb-2" required>
+
+  <label class="form-label">Cantidad actual</label>
+  <input type="number" step="0.01" name="cantidad_actual" value="{{ insumo.cantidad_actual }}" class="form-control mb-2">
+
+  <label class="form-label">Bodega</label>
+  <input type="text" name="bodega" value="{{ insumo.bodega }}" class="form-control mb-3" required>
+
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary">Guardar cambios</button>
+    <a href="/inventario" class="btn btn-secondary">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

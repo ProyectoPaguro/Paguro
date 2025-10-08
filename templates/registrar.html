@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titulo %}Crear usuario{% endblock %}
+
+{% block contenido %}
+<h2 class="text-success mb-3 text-center">🧾 Crear cuenta</h2>
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <form method="POST" class="card p-3 shadow-sm">
+      <label class="form-label">Nombre completo</label>
+      <input type="text" name="nombre" class="form-control mb-2" required>
+
+      <label class="form-label">Correo</label>
+      <input type="email" name="email" class="form-control mb-2" required>
+
+      <label class="form-label">Contraseña</label>
+      <input type="password" name="password" class="form-control mb-3" required>
+
+      {% if current_user.is_authenticated and current_user.rol == 'admin' %}
+      <label class="form-label">Rol</label>
+      <select name="rol" class="form-select mb-3">
+        <option value="operario">Operario</option>
+        <option value="admin">Admin</option>
+      </select>
+      {% endif %}
+
+      <button class="btn btn-success w-100">Registrar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block titulo %}Historial de tareas{% endblock %}
+
+{% block contenido %}
+<h1 class="mb-4 text-primary">Historial de tareas</h1>
+
+<form class="row g-2 mb-3">
+  <div class="col-md-2">
+    <label class="form-label">Tipo</label>
+    <select name="tipo" class="form-select">
+      <option value="" {{ '' == sel_tipo and 'selected' or '' }}>Todos</option>
+      <option value="fundir" {{ 'fundir' == sel_tipo and 'selected' or '' }}>Fundir</option>
+      <option value="pulir"  {{ 'pulir'  == sel_tipo and 'selected' or '' }}>Pulir</option>
+    </select>
+  </div>
+  <div class="col-md-2">
+    <label class="form-label">Estado</label>
+    <select name="estado" class="form-select">
+      <option value="" {{ '' == sel_estado and 'selected' or '' }}>Todos</option>
+      <option value="pendiente"  {{ 'pendiente'  == sel_estado and 'selected' or '' }}>Pendiente</option>
+      <option value="completada" {{ 'completada' == sel_estado and 'selected' or '' }}>Completada</option>
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Desde</label>
+    <input type="date" name="desde" value="{{ sel_desde }}" class="form-control">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Hasta</label>
+    <input type="date" name="hasta" value="{{ sel_hasta }}" class="form-control">
+  </div>
+  <div class="col-md-2 d-flex align-items-end gap-2">
+    <button class="btn btn-primary">Filtrar</button>
+    <a href="{{ url_for('historial_tareas') }}" class="btn btn-outline-secondary">Limpiar</a>
+  </div>
+</form>
+
+<div class="table-responsive">
+  <table class="table table-bordered table-striped align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Fecha</th>
+        <th>Tipo</th>
+        <th>Producto</th>
+        <th>Acabado</th>
+        <th>Estado</th>
+        <th>Imagen</th>
+        <th>Completada por</th>
+        <th>Completada en</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in tareas %}
+      <tr>
+        <td>{{ t.fecha.strftime('%Y-%m-%d') }}</td>
+        <td>{{ t.tipo|title }}</td>
+        <td>{{ t.producto }}</td>
+        <td>{{ t.acabado }}</td>
+        <td>
+          {% if t.completada %}
+            <span class="badge bg-success">Completada</span>
+          {% else %}
+            <span class="badge bg-warning text-dark">Pendiente</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if t.imagen %}
+            <a href="{{ url_for('static', filename=t.imagen) }}" target="_blank">Ver</a>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td>{{ t.completada_por and t.completada_por.nombre or '—' }}</td>
+        <td>{{ t.completada_en and t.completada_en.strftime('%Y-%m-%d %H:%M') or '—' }}</td>
+        <td class="d-flex gap-1">
+          {% if not t.completada %}
+            <form action="{{ url_for('tareas_completar', tarea_id=t.id) }}" method="POST">
+              <button class="btn btn-sm btn-outline-primary">Completar</button>
+            </form>
+          {% endif %}
+          {% if current_user.rol == 'admin' %}
+            {% if t.completada %}
+              <form action="{{ url_for('tareas_reabrir', tarea_id=t.id) }}" method="POST">
+                <button class="btn btn-sm btn-outline-secondary">Reabrir</button>
+              </form>
+            {% endif %}
+            <form action="{{ url_for('tareas_eliminar', tarea_id=t.id) }}" method="POST"
+                  onsubmit="return confirm('¿Eliminar esta tarea?');">
+              <button class="btn btn-sm btn-outline-danger">Eliminar</button>
+            </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" class="text-center text-muted">Sin tareas</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

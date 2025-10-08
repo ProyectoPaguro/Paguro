@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titulo %}Editar Producto{% endblock %}
+
+{% block contenido %}
+<h2 class="text-primary mb-3">✏️ Editar producto</h2>
+
+<form method="POST" class="card p-3 shadow-sm">
+  <label class="form-label">Nombre</label>
+  <input type="text" name="nombre" value="{{ producto.nombre }}" class="form-control mb-2" required>
+
+  <label class="form-label">Acabado</label>
+  <input type="text" name="acabado" value="{{ producto.acabado }}" class="form-control mb-2" required>
+
+  <label class="form-label">Cantidad actual</label>
+  <input type="number" step="0.01" name="cantidad_actual" value="{{ producto.cantidad_actual }}" class="form-control mb-2">
+
+  <label class="form-label">Bodega</label>
+  <input type="text" name="bodega" value="{{ producto.bodega }}" class="form-control mb-3" required>
+
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary">Guardar cambios</button>
+    <a href="/produccion" class="btn btn-secondary">Cancelar</a>
+  </div>
+</form>
+{% endblock %}
