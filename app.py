@@ -56,11 +56,22 @@ app.secret_key = _env_secret
 # DEBUG (puedes dejarlo por ahora; verifica en Logs de Render que salga True)
 print(">>> SECRET_KEY set? ->", bool(app.config.get("SECRET_KEY")))
 
-# --- el resto de tu config ya como estaba ---
-# por ejemplo:
-# db_path = os.path.join(app.instance_path, "database.db")
-# app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + db_path
-# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# --- Base de datos (DEBE ir antes de db = SQLAlchemy(app)) ---
+# Usamos el disco persistente de Render en /var/data si existe,
+# y si no, caemos a instance/database.db (local).
+DATA_DIR = os.environ.get("DATA_DIR", "/var/data")
+
+if os.path.isdir(DATA_DIR) and os.access(DATA_DIR, os.W_OK):
+    os.makedirs(DATA_DIR, exist_ok=True)
+    db_path = os.path.join(DATA_DIR, "database.db")
+else:
+    os.makedirs(app.instance_path, exist_ok=True)
+    db_path = os.path.join(app.instance_path, "database.db")
+
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + db_path
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+print(">>> DB file:", db_path)
 
 db = SQLAlchemy(app)
 
