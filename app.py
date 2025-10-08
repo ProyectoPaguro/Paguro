@@ -415,9 +415,10 @@ def eliminar_insumo(insumo_id):
     flash('Insumo eliminado 🗑️', 'warning')
     return redirect(url_for('inventario'))
 
-@app.route('/movimiento', methods=['GET', 'POST'])
+@app.route('/movimiento', methods=['GET', 'POST'], endpoint='movimiento')
 @login_required
 def movimiento_insumo():
+
     insumos = Insumo.query.order_by(Insumo.nombre.asc()).all()
     if request.method == 'POST':
         tipo = request.form.get('tipo')
@@ -533,10 +534,11 @@ def export_inventario():
                      download_name='inventario.xlsx',
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
-@app.route('/export/movimientos.xlsx')
+@app.route('/export/movimientos.xlsx', endpoint='export_movimientos')
 @login_required
 @require_roles('admin')
 def export_movs_insumos():
+
     movs = (db.session.query(Movimiento, Insumo)
             .join(Insumo, Movimiento.insumo_id == Insumo.id)
             .order_by(Movimiento.fecha.desc())
@@ -697,6 +699,26 @@ def historial_produccion():
                            sel_tipo=tipo or '',
                            sel_desde=desde or '',
                            sel_hasta=hasta or '')
+# --- Compatibilidad con nombres antiguos de endpoints ---
+# Si alguna vista/plantilla aún llama url_for('produccion_view'), etc.,
+# mapeamos esos nombres al endpoint actual.
+app.add_url_rule(
+    '/produccion',
+    endpoint='produccion_view',
+    view_func=app.view_functions['produccion']
+)
+
+app.add_url_rule(
+    '/movimiento-produccion',
+    endpoint='movimiento_produccion_view',
+    view_func=app.view_functions['movimiento_produccion']
+)
+
+app.add_url_rule(
+    '/historial-produccion',
+    endpoint='historial_produccion_view',
+    view_func=app.view_functions['historial_produccion']
+)
 
 # -----------------------------------------------------------------------------
 # Página de últimos movimientos (insumos)
