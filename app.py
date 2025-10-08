@@ -38,10 +38,19 @@ from openpyxl.utils import get_column_letter
 # -----------------------------------------------------------------------------
 # app.py
 import os
+import secrets           # <-- añade esto
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
+
 app = Flask(__name__, instance_relative_config=True)
+app = Flask(__name__, instance_relative_config=True)
+
+# 🔐 Clave de sesión
+app.config["SECRET_KEY"] = (
+    os.environ.get("SECRET_KEY")           # en Render: define SECRET_KEY en Settings → Environment
+    or "4a1c2c621b7e5a8bcecd7b778763856f"   # para desarrollo local
+)
 
 os.makedirs(app.instance_path, exist_ok=True)
 
