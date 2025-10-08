@@ -564,7 +564,7 @@ def export_movs_insumos():
 
 @app.route('/produccion', endpoint='produccion')
 @login_required
-def produccion_view():
+def produccion():
     productos = Producto.query.order_by(Producto.nombre.asc()).all()
     return render_template('produccion.html', productos=productos)
 
@@ -663,7 +663,7 @@ def movimiento_produccion():
 
 @app.route('/historial-produccion')
 @login_required
-def historial_produccion_view():
+def historial_produccion():
     producto_id = request.args.get('producto_id', type=int)
     tipo = request.args.get('tipo')
     desde = request.args.get('desde')
