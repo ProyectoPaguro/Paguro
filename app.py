@@ -62,18 +62,7 @@ print(">>> SECRET_KEY set? ->", bool(app.config.get("SECRET_KEY")))
 # app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + db_path
 # app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# ---- Base de datos (SQLite) ----
-# Si tienes un Disk en Render montado en /var/data úsalo; si no, usa la carpeta instance.
-DB_DIR = "/var/data" if os.path.isdir("/var/data") else app.instance_path
-os.makedirs(DB_DIR, exist_ok=True)
-
-DB_PATH = os.path.join(DB_DIR, "database.db")
-app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
 db = SQLAlchemy(app)
-
-print(">>> DB file:", DB_PATH)
 
 # crea tablas si no existen
 with app.app_context():
@@ -183,19 +172,11 @@ def require_roles(*roles):
         return wrapper
     return deco
 
+# --- Desactivar guardado de imagen por completo ---
 def _save_task_image(file_storage):
-    """Guarda imagen en /static/uploads/tareas y devuelve ruta relativa (p.e. 'uploads/tareas/xxx.jpg')"""
-    if not file_storage or not file_storage.filename:
-        return None
-    ext = file_storage.filename.rsplit('.', 1)[-1].lower()
-    if ext not in ALLOWED_EXT:
-        return None
-    fname = secure_filename(f"{int(time.time())}_{file_storage.filename}")
-    abs_path = os.path.join(app.config['UPLOAD_FOLDER'], fname)
-    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-    file_storage.save(abs_path)
-    rel = os.path.relpath(abs_path, app.static_folder).replace("\\", "/")
-    return rel
+    """La carga de imagen está deshabilitada. Siempre devolver None."""
+    return None
+
 
 @app.route('/favicon.ico')
 def favicon():
