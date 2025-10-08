@@ -720,18 +720,20 @@ app.add_url_rule(
 # -----------------------------------------------------------------------------
 # Página de últimos movimientos (insumos)
 # -----------------------------------------------------------------------------
-@app.route('/movimientos', 
-    endpoint='movimientos'
- view_func=app.view_functions['movimiento_insumo'])
+# -----------------------------------------------------------------------------
+# Página de últimos movimientos (insumos)
+# -----------------------------------------------------------------------------
+@app.route('/movimientos', endpoint='movimientos')
 @login_required
 def movimientos():
-    movs = (db.session.query(Movimiento, Insumo)
-            .join(Insumo, Movimiento.insumo_id == Insumo.id)
-            .order_by(Movimiento.fecha.desc())
-            .limit(200)
-            .all())
+    movs = (
+        db.session.query(Movimiento, Insumo)
+        .join(Insumo, Movimiento.insumo_id == Insumo.id)
+        .order_by(Movimiento.fecha.desc())
+        .limit(200)
+        .all()
+    )
     return render_template('movimientos_recientes.html', movs=movs)
-
 
 # -----------------------------------------------------------------------------
 # Auth
