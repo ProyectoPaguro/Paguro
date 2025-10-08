@@ -56,7 +56,7 @@ app.secret_key = _env_secret
 # DEBUG (puedes dejarlo por ahora; verifica en Logs de Render que salga True)
 print(">>> SECRET_KEY set? ->", bool(app.config.get("SECRET_KEY")))
 
-# --- Base de datos (DEBE ir antes de db = SQLAlchemy(app)) ---
+# --- Base de datos (DEBE ir antes de  ---
 # Usamos el disco persistente de Render en /var/data si existe,
 # y si no, caemos a instance/database.db (local).
 DATA_DIR = os.environ.get("DATA_DIR", "/var/data")
@@ -423,7 +423,7 @@ def eliminar_insumo(insumo_id):
     flash('Insumo eliminado 🗑️', 'warning')
     return redirect(url_for('inventario'))
 
-@app.route('/movimiento', methods=['GET', 'POST'], endpoint='movimiento')
+@app.route('/movimiento', methods=['GET', 'POST'])
 @login_required
 def movimiento_insumo():
 
@@ -542,13 +542,11 @@ def export_inventario():
                      download_name='inventario.xlsx',
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
-app.add_url_rule('/export/movimientos.xlsx',
-    endpoint='export_movimientos',
-    view_func=app.view_functions['export_movs_insumos'])
+# --- Exportaciones Insumos (deja SOLO esto) ---
+@app.route('/export/movimientos.xlsx')
 @login_required
 @require_roles('admin')
 def export_movs_insumos():
-
     movs = (db.session.query(Movimiento, Insumo)
             .join(Insumo, Movimiento.insumo_id == Insumo.id)
             .order_by(Movimiento.fecha.desc())
@@ -579,6 +577,12 @@ def export_movs_insumos():
 def produccion():
     productos = Producto.query.order_by(Producto.nombre.asc()).all()
     return render_template('produccion.html', productos=productos)
+# Alias para compatibilidad con código viejo que llama 'produccion_view'
+app.add_url_rule(
+    '/produccion',
+    endpoint='produccion_view',
+    view_func=app.view_functions['produccion']   # o simplemente: view_func=produccion
+)
 
 
 @app.route('/productos', methods=['GET', 'POST'], endpoint='crear_producto')
@@ -608,10 +612,9 @@ def crear_producto():
 
         p = Producto(nombre=nombre, acabado=acabado, cantidad_actual=cantidad, bodega=bodega)
         db.session.add(p)
-        db.session.commit()
-        flash('Producto creado ✅', 'success')
-        return redirect(url_for('produccion'))
-    return render_template('producto_nuevo.html')
+db.session.commit()
+flash('Producto creado ✅', 'success')
+return go_produccion()
 
 @app.route('/productos/<int:producto_id>/editar', methods=['GET', 'POST'])
 @login_required
@@ -624,10 +627,9 @@ def producto_editar(producto_id):
         p.bodega = request.form.get('bodega', p.bodega).strip()
         if request.form.get('cantidad_actual') not in (None, ''):
             p.cantidad_actual = float(request.form.get('cantidad_actual'))
-        db.session.commit()
-        flash('Producto actualizado ✅', 'success')
-        return redirect(url_for('produccion'))
-    return render_template('editar_producto.html', producto=p)
+db.session.commit()
+flash('Producto actualizado ✅', 'success')
+return go_produccion()
 
 @app.route('/productos/<int:producto_id>/eliminar', methods=['POST'])
 @login_required
@@ -636,9 +638,9 @@ def producto_eliminar(producto_id):
     p = Producto.query.get_or_404(producto_id)
     ProdMovimiento.query.filter_by(producto_id=p.id).delete()
     db.session.delete(p)
-    db.session.commit()
-    flash('Producto eliminado 🗑️', 'warning')
-    return redirect(url_for('produccion'))
+db.session.commit()
+flash('Producto eliminado 🗑️', 'warning')
+return go_produccion()
 
 @app.route('/movimiento-produccion', methods=['GET', 'POST'])
 @login_required
@@ -667,11 +669,9 @@ def movimiento_produccion():
 
         mov = ProdMovimiento(tipo=tipo, cantidad=cantidad, producto=p)
         db.session.add(mov)
-        db.session.commit()
-        flash('Movimiento registrado ✅', 'success')
-        return redirect(url_for('produccion'))
-
-    return render_template('movimiento_produccion.html', productos=productos)
+db.session.commit()
+flash('Movimiento registrado ✅', 'success')
+return go_produccion()
 
 @app.route('/historial-produccion')
 @login_required
@@ -727,6 +727,16 @@ app.add_url_rule(
     endpoint='historial_produccion_view',
     view_func=app.view_functions['historial_produccion']
 )
+from flask import redirect, url_for
+
+def go_produccion():
+    try:
+        return redirect(url_for('produccion'))          # nuevo
+    except Exception:
+        try:
+            return redirect(url_for('produccion_view')) # alias
+        except Exception:
+            return redirect('/produccion')              # fallback
 
 # -----------------------------------------------------------------------------
 # Página de últimos movimientos (insumos)
