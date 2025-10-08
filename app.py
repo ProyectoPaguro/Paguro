@@ -2,15 +2,16 @@ from __future__ import annotations
 
 import os
 import io
-import time
-from datetime import datetime, date
-from datetime import datetime, date, time  # ya lo tienes, pero asegúrate de tener datetime y date
+from datetime import datetime, date, time as dtime  # ya lo dejaste así en el paso 1
 
 def rango_hoy():
     hoy = date.today()
-    inicio = datetime.combine(hoy, time.min)
-    fin = datetime.combine(hoy, time.max)
+    inicio = datetime.combine(hoy, dtime.min)   # 00:00:00 de hoy
+    fin    = datetime.combine(hoy, dtime.max)   # 23:59:59.999999 de hoy
     return inicio, fin
+   # <— time de datetime con alias
+import time as epoch_time                             # <— módulo time con alias
+from pathlib import Path
 
 from flask import (
     Flask, render_template, request, redirect, url_for,
@@ -25,24 +26,34 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import func, text
 
+
 # Export
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 
+
+
 # -----------------------------------------------------------------------------
 # Config básica
 # -----------------------------------------------------------------------------
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'una_clave_secreta_segura'
+# app.py
+import os
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 
-# Subida de imágenes de tareas (solo fundir)
-app.config['UPLOAD_FOLDER'] = os.path.join(app.static_folder, "uploads", "tareas")
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-ALLOWED_EXT = {'png', 'jpg', 'jpeg', 'webp'}
+app = Flask(__name__, instance_relative_config=True)
+
+os.makedirs(app.instance_path, exist_ok=True)
+
+db_path = os.path.join(app.instance_path, "database.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + db_path
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+
+# crea tablas si no existen
+with app.app_context():
+    db.create_all()
 
 # -----------------------------------------------------------------------------
 # Modelos
