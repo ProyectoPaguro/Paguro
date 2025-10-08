@@ -585,6 +585,7 @@ app.add_url_rule(
 )
 
 
+# --------- crear_producto ----------
 @app.route('/productos', methods=['GET', 'POST'], endpoint='crear_producto')
 @login_required
 @require_roles('admin')
@@ -612,25 +613,34 @@ def crear_producto():
 
         p = Producto(nombre=nombre, acabado=acabado, cantidad_actual=cantidad, bodega=bodega)
         db.session.add(p)
-db.session.commit()
-flash('Producto creado ✅', 'success')
-return go_produccion()
+        db.session.commit()
+        flash('Producto creado ✅', 'success')
+        return go_produccion()
 
+    return render_template('producto_nuevo.html')
+
+
+# --------- producto_editar ----------
 @app.route('/productos/<int:producto_id>/editar', methods=['GET', 'POST'])
 @login_required
 @require_roles('admin')
 def producto_editar(producto_id):
     p = Producto.query.get_or_404(producto_id)
     if request.method == 'POST':
-        p.nombre = request.form.get('nombre', p.nombre).strip()
+        p.nombre  = request.form.get('nombre',  p.nombre).strip()
         p.acabado = request.form.get('acabado', p.acabado).strip()
-        p.bodega = request.form.get('bodega', p.bodega).strip()
+        p.bodega  = request.form.get('bodega',  p.bodega).strip()
         if request.form.get('cantidad_actual') not in (None, ''):
             p.cantidad_actual = float(request.form.get('cantidad_actual'))
-db.session.commit()
-flash('Producto actualizado ✅', 'success')
-return go_produccion()
 
+        db.session.commit()
+        flash('Producto actualizado ✅', 'success')
+        return go_produccion()
+
+    return render_template('editar_producto.html', producto=p)
+
+
+# --------- producto_eliminar ----------
 @app.route('/productos/<int:producto_id>/eliminar', methods=['POST'])
 @login_required
 @require_roles('admin')
@@ -638,16 +648,18 @@ def producto_eliminar(producto_id):
     p = Producto.query.get_or_404(producto_id)
     ProdMovimiento.query.filter_by(producto_id=p.id).delete()
     db.session.delete(p)
-db.session.commit()
-flash('Producto eliminado 🗑️', 'warning')
-return go_produccion()
+    db.session.commit()
+    flash('Producto eliminado 🗑️', 'warning')
+    return go_produccion()
 
+
+# --------- movimiento_produccion ----------
 @app.route('/movimiento-produccion', methods=['GET', 'POST'])
 @login_required
 def movimiento_produccion():
     productos = Producto.query.order_by(Producto.nombre.asc()).all()
     if request.method == 'POST':
-        tipo = request.form.get('tipo')  # Entrada / Salida
+        tipo = request.form.get('tipo')      # Entrada / Salida
         cantidad = float(request.form.get('cantidad'))
         producto_id = int(request.form.get('producto'))
         p = Producto.query.get(producto_id)
@@ -669,9 +681,12 @@ def movimiento_produccion():
 
         mov = ProdMovimiento(tipo=tipo, cantidad=cantidad, producto=p)
         db.session.add(mov)
-db.session.commit()
-flash('Movimiento registrado ✅', 'success')
-return go_produccion()
+        db.session.commit()
+        flash('Movimiento registrado ✅', 'success')
+        return go_produccion()
+
+    return render_template('movimiento_produccion.html', productos=productos)
+
 
 @app.route('/historial-produccion')
 @login_required
