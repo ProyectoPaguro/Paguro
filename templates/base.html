@@ -51,12 +51,6 @@
           </li>
           {% endif %}
 
-          <li class="nav-item">
-            <a class="nav-link {{ 'active' if ap.startswith('/movimientos') else '' }}"
-               href="{{ url_for('movimientos') }}">
-              Movimientos
-            </a>
-          </li>
         </ul>
 
         <div class="d-flex align-items-center gap-2">
@@ -101,11 +95,6 @@
         {% endif %}
 
         <li class="nav-item">
-          <a class="nav-link {% if ap.startswith('/movimiento') and not ap.startswith('/movimiento-produccion') %}active{% endif %}"
-             href="{{ url_for('movimiento_insumo') }}">Movimientos</a>
-        </li>
-
-        <li class="nav-item">
           <a class="nav-link {% if ap.startswith('/historial') and not ap.startswith('/historial-produccion') %}active{% endif %}"
              href="{{ url_for('historial_insumos') }}">Historial</a>
         </li>
@@ -135,11 +124,6 @@
              href="{{ url_for('crear_producto') }}">Nuevo producto</a>
         </li>
         {% endif %}
-
-        <li class="nav-item">
-          <a class="nav-link {% if ap.startswith('/movimiento-produccion') %}active{% endif %}"
-             href="{{ url_for('movimiento_produccion') }}">Movimientos</a>
-        </li>
 
         <li class="nav-item">
           <a class="nav-link {% if ap.startswith('/historial-produccion') %}active{% endif %}"
