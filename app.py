@@ -37,6 +37,21 @@ from openpyxl.utils import get_column_letter
 # Config básica
 # -----------------------------------------------------------------------------
 # app.py
+
+from zoneinfo import ZoneInfo
+
+LOCAL_TZ = ZoneInfo(os.getenv("LOCAL_TZ", "America/Bogota"))  # cámbiala si necesitas
+UTC = ZoneInfo("UTC")
+
+def hoy_local_a_utc_bounds():
+    """Devuelve (inicio_utc_naive, fin_utc_naive) del día local actual."""
+    ahora_local = datetime.now(LOCAL_TZ)
+    ini_local = datetime.combine(ahora_local.date(), dtime.min, tzinfo=LOCAL_TZ)
+    fin_local = datetime.combine(ahora_local.date(), dtime.max, tzinfo=LOCAL_TZ)
+    ini_utc = ini_local.astimezone(UTC).replace(tzinfo=None)  # naive UTC para SQLite
+    fin_utc = fin_local.astimezone(UTC).replace(tzinfo=None)
+    return ini_utc, fin_utc
+
 import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -201,34 +216,38 @@ def favicon():
 def dashboard():
     total_insumos = Insumo.query.count()
 
-    # movimientos de insumos hoy
-    hoy_inicio = datetime.combine(date.today(), datetime.min.time())
-    movs_hoy = Movimiento.query.filter(Movimiento.fecha >= hoy_inicio).count()
+    # HOY en hora local (convertido a UTC para comparar en DB)
+    ini_hoy_utc, fin_hoy_utc = hoy_local_a_utc_bounds()
 
-    # stock bajo
+    # movimientos de insumos HOY (local)
+    movs_hoy = (Movimiento.query
+                .filter(Movimiento.fecha >= ini_hoy_utc,
+                        Movimiento.fecha <= fin_hoy_utc)
+                .count())
+
     UMBRAL = 5
     bajos = Insumo.query.filter(Insumo.cantidad_actual < UMBRAL).count()
 
-    # Tareas de HOY
-    hoy = date.today()
+    # PENDIENTES: SIEMPRE visibles (sin fecha)
     tareas_fundir_pend = (Tarea.query
         .filter(Tarea.tipo=='fundir', Tarea.completada.is_(False))
-        .filter(func.date(Tarea.fecha) == hoy)
         .order_by(Tarea.id.desc()).all())
-
-    tareas_fundir_comp = (Tarea.query
-        .filter(Tarea.tipo=='fundir', Tarea.completada.is_(True))
-        .filter(func.date(Tarea.fecha) == hoy)
-        .order_by(Tarea.completada_en.desc().nullslast()).all())
 
     tareas_pulir_pend = (Tarea.query
         .filter(Tarea.tipo=='pulir', Tarea.completada.is_(False))
-        .filter(func.date(Tarea.fecha) == hoy)
         .order_by(Tarea.id.desc()).all())
+
+    # COMPLETADAS HOY (en hora local, usando completada_en)
+    tareas_fundir_comp = (Tarea.query
+        .filter(Tarea.tipo=='fundir', Tarea.completada.is_(True))
+        .filter(Tarea.completada_en >= ini_hoy_utc,
+                Tarea.completada_en <= fin_hoy_utc)
+        .order_by(Tarea.completada_en.desc().nullslast()).all())
 
     tareas_pulir_comp = (Tarea.query
         .filter(Tarea.tipo=='pulir', Tarea.completada.is_(True))
-        .filter(func.date(Tarea.fecha) == hoy)
+        .filter(Tarea.completada_en >= ini_hoy_utc,
+                Tarea.completada_en <= fin_hoy_utc)
         .order_by(Tarea.completada_en.desc().nullslast()).all())
 
     return render_template(
@@ -242,6 +261,7 @@ def dashboard():
         tareas_pulir_pend=tareas_pulir_pend,
         tareas_pulir_comp=tareas_pulir_comp
     )
+
 
 # -----------------------------------------------------------------------------
 # Tareas
