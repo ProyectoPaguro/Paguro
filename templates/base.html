@@ -67,53 +67,52 @@
     </div>
   </nav>
 
-  {# SUBNAV POR ÁREA #}
-  {% set es_insumos = ap.startswith('/inventario')
-                       or ap.startswith('/insumos')
-                       or ap.startswith('/movimientos')
-                       or (ap.startswith('/historial') and not ap.startswith('/historial-produccion')) %}
-  {% set es_prod = ap.startswith('/produccion')
-                   or ap.startswith('/productos')
-                   or ap.startswith('/movimiento-produccion')
-                   or ap.startswith('/historial-produccion') %}
-  {% set es_users = ap.startswith('/usuarios') or ap.startswith('/registrar') %}
+{# SUBNAV POR ÁREA #}
+{% set es_insumos = ap.startswith('/inventario')
+                     or ap.startswith('/insumos')
+                     or ap.startswith('/movimiento') and not ap.startswith('/movimiento-produccion')
+                     or (ap.startswith('/historial') and not ap.startswith('/historial-produccion')) %}
+{% set es_prod = ap.startswith('/produccion')
+                 or ap.startswith('/productos')
+                 or ap.startswith('/movimiento-produccion')
+                 or ap.startswith('/historial-produccion') %}
+{% set es_users = ap.startswith('/usuarios') or ap.startswith('/registrar') %}
 
-  {% if es_insumos %}
-  <li class="nav-item">
-  <a class="nav-link {% if ap.startswith('/movimiento') and not ap.startswith('/movimiento-produccion') %}active{% endif %}"
-     href="{{ url_for('movimiento_insumo') }}">Movimientos </a>
-
-</li>
-
-  <div class="subnav border-bottom bg-white sticky-subnav">
-    <div class="container d-flex align-items-center">
-      <ul class="nav nav-pills py-2 gap-2">
-        <li class="nav-item">
-          <a class="nav-link {% if ap.startswith('/inventario') %}active{% endif %}"
-             href="{{ url_for('inventario') }}">Inventario</a>
-        </li>
-
-        {% if current_user.is_authenticated and current_user.rol=='admin' %}
-        <li class="nav-item">
-          <a class="nav-link {% if ap.startswith('/insumos') and not ap.startswith('/insumos/') %}active{% endif %}"
-             href="{{ url_for('insumos_create') }}">Nuevo insumo</a>
-        </li>
-        {% endif %}
-
-        <li class="nav-item">
-          <a class="nav-link {% if ap.startswith('/historial') and not ap.startswith('/historial-produccion') %}active{% endif %}"
-             href="{{ url_for('historial_insumos') }}">Historial</a>
-        </li>
-      </ul>
+{% if es_insumos %}
+<div class="subnav border-bottom bg-white sticky-subnav shadow-sm">
+  <div class="container d-flex align-items-center">
+    <ul class="nav nav-pills subnav-pills py-2 gap-2">
+      <li class="nav-item">
+        <a class="nav-link {{ 'active' if ap.startswith('/inventario') else '' }}"
+           href="{{ url_for('inventario') }}">Inventario</a>
+      </li>
 
       {% if current_user.is_authenticated and current_user.rol=='admin' %}
-      <div class="ms-auto d-none d-md-flex gap-2">
-        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('export_inventario') }}">⬇ Exportar inventario</a>
-        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('export_movs_insumos') }}">⬇ Exportar movimientos</a>
-      </div>
+      <li class="nav-item">
+        <a class="nav-link {{ 'active' if ap.startswith('/insumos') and not ap.startswith('/insumos/') else '' }}"
+           href="{{ url_for('insumos_create') }}">Nuevo insumo</a>
+      </li>
       {% endif %}
+
+      <li class="nav-item">
+        <a class="nav-link {{ 'active' if ap.startswith('/movimiento') and not ap.startswith('/movimiento-produccion') else '' }}"
+           href="{{ url_for('movimiento_insumo') }}">Movimientos</a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link {{ 'active' if ap.startswith('/historial') and not ap.startswith('/historial-produccion') else '' }}"
+           href="{{ url_for('historial_insumos') }}">Historial</a>
+      </li>
+    </ul>
+
+    {% if current_user.is_authenticated and current_user.rol=='admin' %}
+    <div class="ms-auto d-none d-md-flex gap-2">
+      <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('export_inventario') }}">⬇ Exportar inventario</a>
+      <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('export_movs_insumos') }}">⬇ Exportar movimientos</a>
     </div>
+    {% endif %}
   </div>
+</div>
 
 {% elif es_prod %}
 <div class="subnav border-bottom bg-white sticky-subnav shadow-sm">
@@ -143,25 +142,24 @@
     </ul>
   </div>
 </div>
+
+{% elif es_users and current_user.is_authenticated and current_user.rol=='admin' %}
+<div class="subnav border-bottom bg-white sticky-subnav shadow-sm">
+  <div class="container">
+    <ul class="nav nav-pills subnav-pills py-2 gap-2">
+      <li class="nav-item">
+        <a class="nav-link {{ 'active' if ap.startswith('/usuarios') else '' }}"
+           href="{{ url_for('usuarios') }}">Lista de usuarios</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {{ 'active' if ap.startswith('/registrar') else '' }}"
+           href="{{ url_for('registrar') }}">Crear usuario</a>
+      </li>
+    </ul>
+  </div>
+</div>
 {% endif %}
 
-
-  {% elif es_users and current_user.is_authenticated and current_user.rol=='admin' %}
-  <div class="subnav border-bottom bg-white sticky-subnav">
-    <div class="container">
-      <ul class="nav nav-pills py-2 gap-2">
-        <li class="nav-item">
-          <a class="nav-link {% if ap.startswith('/usuarios') %}active{% endif %}"
-             href="{{ url_for('usuarios') }}">Lista de usuarios</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if ap.startswith('/registrar') %}active{% endif %}"
-             href="{{ url_for('registrar') }}">Crear usuario</a>
-        </li>
-      </ul>
-    </div>
-  </div>
-  {% endif %}
 
   <!-- CONTENIDO -->
   <div class="container mt-4">
