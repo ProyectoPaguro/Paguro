@@ -129,19 +129,25 @@
       <ul class="nav nav-pills py-2 gap-2">
         <li class="nav-item">
           <a class="nav-link {% if ap.startswith('/produccion') %}active{% endif %}"
-             href="{{ url_for('produccion') }}">Inventario</a>
+             href="{{ url_for('produccion') }}">
+             Inventario
+            </a>
         </li>
 
         {% if current_user.is_authenticated and current_user.rol=='admin' %}
         <li class="nav-item">
           <a class="nav-link {% if ap.startswith('/productos') %}active{% endif %}"
-             href="{{ url_for('crear_producto') }}">Nuevo producto</a>
+             href="{{ url_for('crear_producto') }}">
+             Nuevo producto
+            </a>
         </li>
         {% endif %}
 
         <li class="nav-item">
           <a class="nav-link {% if ap.startswith('/historial-produccion') %}active{% endif %}"
-             href="{{ url_for('historial_produccion') }}">Historial</a>
+             href="{{ url_for('historial_produccion') }}">
+             Historial
+            </a>
         </li>
       </ul>
     </div>
