@@ -53,7 +53,7 @@
     <tbody>
       {% for t in tareas %}
       <tr>
-        <td>{{ t.fecha.localdt('%Y-%m-%d') }}</td>
+        <td>{{ t.fecha and t.fecha.strftime('%Y-%m-%d') or '—' }}</td>
         <td>{{ t.tipo|title }}</td>
         <td>{{ t.producto }}</td>
         <td>{{ t.acabado }}</td>
