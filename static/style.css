@@ -35,4 +35,31 @@ footer { font-size: .9rem; color: #6c757d; }
   vertical-align: middle;
 }
 
+/* Subnav sticky y con pastillas lindas */
+.sticky-subnav {
+  position: sticky;
+  top: 56px;            /* altura aprox de la navbar principal */
+  z-index: 1019;
+}
+
+.subnav-pills .nav-link {
+  border-radius: 999px;     /* pill full rounded */
+  padding: .45rem 1rem;
+  font-weight: 600;
+  color: #0d6efd;           /* mismo azul de bootstrap */
+  background: transparent;
+  border: 1px solid rgba(13,110,253,.25);
+}
+
+.subnav-pills .nav-link:hover {
+  background: rgba(13,110,253,.08);
+  text-decoration: none;
+}
+
+.subnav-pills .nav-link.active {
+  background: #0d6efd;
+  border-color: #0d6efd;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(13,110,253,.35);
+}
 
