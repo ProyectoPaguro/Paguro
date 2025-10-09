@@ -188,22 +188,16 @@
 </div>
 
 <div class="row g-3">
-  <div class="col-md-4">
-    <div class="card p-3 shadow-sm">
+  <div class="col-md-6">
+    <div class="card p-3 shadow-sm h-100">
       <div class="text-muted">Insumos registrados</div>
-      <div class="h2">{{ total_insumos }}</div>
+      <div class="h2 mb-0">{{ total_insumos }}</div>
     </div>
   </div>
-  <div class="col-md-4">
-    <div class="card p-3 shadow-sm">
-      <div class="text-muted">Movimientos hoy</div>
-      <div class="h2">{{ movs_hoy }}</div>
-    </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card p-3 shadow-sm">
-      <div class="text-muted">Bajo stock (&lt; {{ umbral }})</div>
-      <div class="h2">{{ bajos }}</div>
+  <div class="col-md-6">
+    <div class="card p-3 shadow-sm h-100">
+      <div class="text-muted">Productos registrados</div>
+      <div class="h2 mb-0">{{ total_productos }}</div>
     </div>
   </div>
 </div>
