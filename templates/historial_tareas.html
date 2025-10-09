@@ -46,7 +46,7 @@
         <th>Estado</th>
         <th>Imagen</th>
         <th>Completada por</th>
-        <th>Completada el</th>
+        <th>Completada en</th>
         <th>Acciones</th>
       </tr>
     </thead>
@@ -72,7 +72,7 @@
           {% endif %}
         </td>
         <td>{{ t.completada_por and t.completada_por.nombre or '—' }}</td>
-        <td>{{ t.completada_el and t.completada_en|localdt('%Y-%m-%d') or '—' }}</td>
+        <td>{{ t.completada_en and t.completada_en|localdt('%Y-%m-%d') or '—' }}</td>
         <td class="d-flex gap-1">
           {% if not t.completada %}
             <form action="{{ url_for('tareas_completar', tarea_id=t.id) }}" method="POST">
