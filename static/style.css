@@ -7,7 +7,7 @@ body { background-color: #f5f7fa; font-family: "Segoe UI", Arial, sans-serif; }
 .alert { padding: .6rem .75rem; }
 footer { font-size: .9rem; color: #6c757d; }
 /* Subnav fija y limpia */
-.sticky-subnav { position: sticky; top: 56px; z-index: 1020; }
+.sticky-subnav { position: static; top: 56px; z-index: 1020; }
 .nav-pills .nav-link { border-radius: 999px; }
 .navbar .nav-link.active { font-weight: 600; }
 /* Pastillas de resumen rápidas */
@@ -37,7 +37,7 @@ footer { font-size: .9rem; color: #6c757d; }
 
 /* Subnav sticky y con pastillas lindas */
 .sticky-subnav {
-  position: sticky;
+  position: static;
   top: 56px;            /* altura aprox de la navbar principal */
   z-index: 1019;
 }
