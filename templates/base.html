@@ -79,6 +79,13 @@
   {% set es_users = ap.startswith('/usuarios') or ap.startswith('/registrar') %}
 
   {% if es_insumos %}
+  <li class="nav-item">
+  <a class="nav-link {% if ap.startswith('/movimiento') and not ap.startswith('/movimiento-produccion') %}active{% endif %}"
+     href="{{ url_for('movimiento_insumo') }}">
+    Movimientos
+  </a>
+</li>
+
   <div class="subnav border-bottom bg-white sticky-subnav">
     <div class="container d-flex align-items-center">
       <ul class="nav nav-pills py-2 gap-2">
@@ -110,6 +117,13 @@
   </div>
 
   {% elif es_prod %}
+  <li class="nav-item">
+  <a class="nav-link {% if ap.startswith('/movimiento-produccion') %}active{% endif %}"
+     href="{{ url_for('movimiento_produccion') }}">
+    Movimientos
+  </a>
+</li>
+
   <div class="subnav border-bottom bg-white sticky-subnav">
     <div class="container d-flex align-items-center">
       <ul class="nav nav-pills py-2 gap-2">
