@@ -24,7 +24,8 @@ from flask_login import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from sqlalchemy import func, text
+from sqlalchemy import func, text, or_
+
 
 
 # Export
@@ -37,6 +38,38 @@ from openpyxl.utils import get_column_letter
 # Config básica
 # -----------------------------------------------------------------------------
 # app.py
+
+
+import os
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+
+app = Flask(__name__, instance_relative_config=True)
+
+from zoneinfo import ZoneInfo
+from datetime import timezone, time as dtime, datetime
+# --- Zona horaria local (por variable de entorno LOCAL_TZ o Bogotá por defecto)
+LOCAL_TZ_NAME = os.environ.get("LOCAL_TZ", "America/Bogota")
+LOCAL_TZ = ZoneInfo(LOCAL_TZ_NAME)
+UTC = ZoneInfo("UTC")
+
+def to_local(dt):
+    """Convierte un datetime guardado en UTC (naive) a hora local."""
+    if not dt:
+        return None
+    # Tus fechas en DB son naive creadas con datetime.utcnow() => trátalas como UTC
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC)
+    return dt.astimezone(LOCAL_TZ)
+
+def fmt_local(dt, fmt="%Y-%m-%d %H:%M"):
+    x = to_local(dt)
+    return x.strftime(fmt) if x else ""
+
+@app.template_filter("localdt")
+def localdt_filter(dt, fmt="%Y-%m-%d %H:%M"):
+    return fmt_local(dt, fmt)
+
 
 from zoneinfo import ZoneInfo
 
@@ -51,12 +84,6 @@ def hoy_local_a_utc_bounds():
     ini_utc = ini_local.astimezone(UTC).replace(tzinfo=None)  # naive UTC para SQLite
     fin_utc = fin_local.astimezone(UTC).replace(tzinfo=None)
     return ini_utc, fin_utc
-
-import os
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-app = Flask(__name__, instance_relative_config=True)
-
 # --- SECRET KEY (antes de cualquier uso de session/flash/login_manager) ---
 _env_secret = os.environ.get("SECRET_KEY")
 if not _env_secret:
@@ -215,6 +242,7 @@ def favicon():
 @login_required
 def dashboard():
     total_insumos = Insumo.query.count()
+    total_productos = Producto.query.count()
 
     # HOY en hora local (convertido a UTC para comparar en DB)
     ini_hoy_utc, fin_hoy_utc = hoy_local_a_utc_bounds()
@@ -253,6 +281,7 @@ def dashboard():
     return render_template(
         'dashboard.html',
         total_insumos=total_insumos,
+        total_productos=total_productos,
         movs_hoy=movs_hoy,
         bajos=bajos,
         umbral=UMBRAL,
@@ -577,7 +606,7 @@ def export_movs_insumos():
     headers = ["Fecha", "Insumo", "Tipo", "Cantidad", "Unidad", "Bodega"]
     ws.append(headers)
     for m, i in movs:
-        ws.append([m.fecha.strftime("%Y-%m-%d %H:%M"), i.nombre, m.tipo, m.cantidad, i.unidad, i.bodega])
+        ws.append([fmt_local(m.fecha, "%Y-%m-%d %H:%M"), i.nombre, m.tipo, m.cantidad, i.unidad, i.bodega])
     for col in range(1, len(headers)+1):
         ws.column_dimensions[get_column_letter(col)].width = 18
     output = io.BytesIO()
@@ -595,8 +624,22 @@ def export_movs_insumos():
 @app.route('/produccion', endpoint='produccion')
 @login_required
 def produccion():
-    productos = Producto.query.order_by(Producto.nombre.asc()).all()
-    return render_template('produccion.html', productos=productos)
+    q = (request.args.get('q') or '').strip()
+
+    query = Producto.query
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            or_(
+                Producto.nombre.ilike(like),
+                Producto.acabado.ilike(like),
+                Producto.bodega.ilike(like),
+            )
+        )
+
+    productos = query.order_by(Producto.nombre.asc()).all()
+    return render_template('produccion.html', productos=productos, q=q)
+
 # Alias para compatibilidad con código viejo que llama 'produccion_view'
 app.add_url_rule(
     '/produccion',
