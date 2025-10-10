@@ -2,17 +2,17 @@
 {% block titulo %}Movimientos de producción{% endblock %}
 
 {% block contenido %}
-<h1 class="mb-4 text-primary">Registrar movimiento de producción</h1>
+<h2 class="text-primary mb-3">Registrar movimiento de producción</h2>
 
-<form method="POST" class="card p-3 shadow-sm">
+<form method="POST" class="card card-body shadow-sm">
   <!-- Producto -->
   <div class="mb-3">
     <label class="form-label">Producto</label>
-    <select name="producto" class="form-select" required>
-      {% for prod in productos %}
-      <option value="{{ prod.id }}" {{ sel_prod==prod.id and 'selected' or '' }}>
-        {{ prod.nombre }} - {{ prod.acabado }} ({{ '%.1f'|format(prod.cantidad_actual) }}) — {{ prod.bodega }}
-      </option>
+    <select name="producto" class="form-select" id="selProducto" required>
+      {% for p in productos %}
+        <option value="{{ p.id }}">
+          {{ p.nombre }} - {{ p.acabado }} ({{ "%.1f"|format(p.cantidad_actual) }}) — {{ p.bodega }}
+        </option>
       {% endfor %}
     </select>
   </div>
@@ -20,53 +20,68 @@
   <!-- Tipo -->
   <div class="mb-3">
     <label class="form-label">Tipo de movimiento</label>
-    <select name="tipo" id="tipo" class="form-select" required>
-      <option value="Entrada">Entrada</option>
-      <option value="Salida">Salida</option>
-      <option value="Transferencia">Transferencia</option>
+    <select name="tipo" id="selTipo" class="form-select" required>
+      <option>Entrada</option>
+      <option>Salida</option>
+      <option>Transferencia</option>
     </select>
   </div>
 
-  <!-- Bodega destino (sólo para Transferencia) -->
-  <div class="mb-3" id="row-destino" style="display:none;">
+  <!-- Bodega destino (solo Transferencia) -->
+  <div class="mb-3" id="grpDestino" style="display:none;">
     <label class="form-label">Bodega destino</label>
-    <select name="bodega_destino" class="form-select">
-      <option value="">Selecciona destino…</option>
+    <select name="bodega_destino" id="selDestino" class="form-select">
+      <option value="">Selecciona destino...</option>
       {% for b in bodegas %}
-      <option value="{{ b }}">{{ b }}</option>
+        <option value="{{ b }}">{{ b }}</option>
       {% endfor %}
     </select>
-    <div class="form-text">Moverá el producto a la bodega elegida (no cambia la cantidad).</div>
+    <div class="form-text">Si transfieres, elige a qué bodega sumaremos el stock.</div>
   </div>
 
-  <!-- Cantidad (ocultar en Transferencia) -->
-  <div class="mb-3" id="row-cantidad">
+  <!-- Cantidad -->
+  <div class="mb-3">
     <label class="form-label">Cantidad</label>
-    <input type="number" step="0.01" min="0" name="cantidad" class="form-control">
+    <input type="number" step="0.01" min="0" name="cantidad" class="form-control" required>
   </div>
 
   <div class="d-flex gap-2">
     <button class="btn btn-primary">Guardar movimiento</button>
-    <a href="{{ url_for('produccion') }}" class="btn btn-outline-secondary">Volver</a>
+    <a class="btn btn-outline-secondary" href="{{ url_for('produccion') }}">Volver</a>
   </div>
 </form>
 
 <script>
-  const tipo = document.getElementById('tipo');
-  const rowDestino = document.getElementById('row-destino');
-  const rowCantidad = document.getElementById('row-cantidad');
+  const selTipo = document.getElementById('selTipo');
+  const grpDestino = document.getElementById('grpDestino');
+  const selDestino = document.getElementById('selDestino');
+  const selProducto = document.getElementById('selProducto');
 
-  function toggleRows() {
-    if (tipo.value === 'Transferencia') {
-      rowDestino.style.display = '';
-      rowCantidad.style.display = 'none';
-    } else {
-      rowDestino.style.display = 'none';
-      rowCantidad.style.display = '';
-    }
+  function bodegaActualDeOpcion(txt) {
+    // El option muestra "... — NOMBRE_BODEGA", nos quedamos con lo que va después del guión largo
+    const idx = txt.lastIndexOf('—');
+    return idx >= 0 ? txt.substring(idx+1).trim() : '';
   }
-  tipo.addEventListener('change', toggleRows);
-  toggleRows(); // inicial
+
+  function refrescarDestino() {
+    const esTransf = selTipo.value === 'Transferencia';
+    grpDestino.style.display = esTransf ? '' : 'none';
+    if (!esTransf) { selDestino.value = ''; return; }
+
+    // Excluir la bodega actual del producto seleccionado
+    const opt = selProducto.options[selProducto.selectedIndex];
+    const bodegaActual = bodegaActualDeOpcion(opt.text);
+
+    // deshabilitar/ocultar la opción igual a la actual
+    [...selDestino.options].forEach(o => {
+      if (!o.value) return;
+      o.disabled = (o.value === bodegaActual);
+      o.hidden = (o.value === bodegaActual);
+    });
+  }
+
+  selTipo.addEventListener('change', refrescarDestino);
+  selProducto.addEventListener('change', refrescarDestino);
+  window.addEventListener('DOMContentLoaded', refrescarDestino);
 </script>
 {% endblock %}
-
