@@ -171,12 +171,13 @@ class Producto(db.Model):
 
 class ProdMovimiento(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    tipo = db.Column(db.String(20), nullable=False)
+    tipo = db.Column(db.String(20), nullable=False)    # Entrada / Salida
     cantidad = db.Column(db.Float, nullable=False)
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
-    bodega = db.Column(db.String(120))  # <— añade esto y te evitas el UPDATE manual
+    bodega = db.Column(db.String(120))                 # <-- NUEVO CAMPO
     producto_id = db.Column(db.Integer, db.ForeignKey('producto.id'))
     producto = db.relationship('Producto', backref=db.backref('movimientos', lazy=True))
+
 
 
 
@@ -741,89 +742,110 @@ def producto_eliminar(producto_id):
 @app.route('/movimiento-produccion', methods=['GET', 'POST'])
 @login_required
 def movimiento_produccion():
-    productos = Producto.query.order_by(Producto.nombre.asc()).all()
-    bodegas = listar_bodegas()
+# dentro de def movimiento_produccion():
+productos = Producto.query.order_by(Producto.nombre.asc()).all()
+bodegas = sorted({b for (b,) in db.session.query(Producto.bodega).distinct()})
 
-    if request.method == 'POST':
-        tipo = (request.form.get('tipo') or '').strip()           # Entrada | Salida | Transferencia
-        cantidad = float(request.form.get('cantidad') or 0)
-        producto_id = int(request.form.get('producto') or 0)
-        p = Producto.query.get(producto_id)
+if request.method == 'POST':
+    tipo = (request.form.get('tipo') or '').strip()
+    cantidad = float(request.form.get('cantidad') or 0)
+    producto_id = int(request.form.get('producto') or 0)
+    p = Producto.query.get_or_404(producto_id)
 
-        if not p:
-            flash('Producto no encontrado', 'danger')
+    # Para transferencias (solo producción)
+    if tipo == 'Transferencia':
+        destino = (request.form.get('bodega_destino') or '').strip()
+
+        if not destino or destino == p.bodega:
+            flash('Selecciona una bodega destino distinta a la de origen.', 'warning')
             return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
 
-        if cantidad <= 0:
-            flash('Cantidad inválida', 'danger')
+        if p.cantidad_actual < cantidad:
+            flash('No hay suficiente stock del producto', 'danger')
             return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
 
-        # --- Transferencia entre bodegas ---
-        if tipo == 'Transferencia':
-            destino = (request.form.get('bodega_destino') or '').strip()
-            if not destino:
-                flash('Selecciona la bodega destino.', 'warning')
-                return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
-            if destino == p.bodega:
-                flash('El destino debe ser diferente al origen.', 'warning')
-                return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
-            if p.cantidad_actual < cantidad:
-                flash('No hay suficiente stock en la bodega de origen.', 'danger')
-                return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
+        # 1) Origen: salida y guarda bodega del movimiento
+        p.cantidad_actual -= cantidad
+        mov_origen = ProdMovimiento(
+            tipo='Salida',
+            cantidad=cantidad,
+            producto=p,
+            fecha=datetime.utcnow()
+        )
+        db.session.add(mov_origen)
+        db.session.flush()  # asegura mov_origen.id
 
-            # 1) Descuenta en origen (p)
-            p.cantidad_actual -= cantidad
-            db.session.add(ProdMovimiento(tipo='Salida', cantidad=cantidad, producto=p, fecha=datetime.utcnow()))
-            # Vamos a guardar la bodega en el movimiento
-            db.session.flush()  # tener id si fuera necesario
-            db.session.execute(text("UPDATE prod_movimiento SET bodega=:b WHERE id=:id")).params(
-                b=p.bodega, id=p.movimientos[-1].id
+        db.session.execute(
+            text("UPDATE prod_movimiento SET bodega=:b WHERE id=:id"),
+            {"b": p.bodega, "id": mov_origen.id}
+        )
+
+        # 2) Destino: busca o crea producto gemelo en otra bodega
+        dest = (Producto.query
+                .filter_by(nombre=p.nombre, acabado=p.acabado, bodega=destino)
+                .first())
+        if not dest:
+            dest = Producto(
+                nombre=p.nombre,
+                acabado=p.acabado,
+                cantidad_actual=0,
+                bodega=destino
             )
-
-            # 2) Suma en destino (mismo nombre+acabado, otra bodega)
-            dest = Producto.query.filter_by(nombre=p.nombre, acabado=p.acabado, bodega=destino).first()
-            if not dest:
-                dest = Producto(nombre=p.nombre, acabado=p.acabado, cantidad_actual=0, bodega=destino)
-                db.session.add(dest)
-                db.session.flush()
-
-            dest.cantidad_actual += cantidad
-            db.session.add(ProdMovimiento(tipo='Entrada', cantidad=cantidad, producto=dest, fecha=datetime.utcnow()))
+            db.session.add(dest)
             db.session.flush()
-            db.session.execute(text("UPDATE prod_movimiento SET bodega=:b WHERE id=:id")).params(
-                b=destino, id=dest.movimientos[-1].id
-            )
 
-            db.session.commit()
-            flash(f'Transferencia realizada: {cantidad} de "{p.nombre}" ({p.acabado}) de {p.bodega} → {destino}', 'success')
-            return redirect(url_for('produccion'))
+        dest.cantidad_actual += cantidad
 
-        # --- Entrada / Salida simples (misma lógica que ya tenías) ---
-        if tipo == 'Entrada':
-            p.cantidad_actual += cantidad
-        elif tipo == 'Salida':
-            if p.cantidad_actual < cantidad:
-                flash('No hay suficiente stock del producto', 'danger')
-                return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
-            p.cantidad_actual -= cantidad
-        else:
-            flash('Tipo inválido', 'danger')
-            return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
+        mov_dest = ProdMovimiento(
+            tipo='Entrada',
+            cantidad=cantidad,
+            producto=dest,
+            fecha=datetime.utcnow()
+        )
+        db.session.add(mov_dest)
+        db.session.flush()  # asegura mov_dest.id
 
-        mov = ProdMovimiento(tipo=tipo, cantidad=cantidad, producto=p, fecha=datetime.utcnow())
-        db.session.add(mov)
-        db.session.flush()
-        db.session.execute(text("UPDATE prod_movimiento SET bodega=:b WHERE id=:id")).params(
-            b=p.bodega, id=mov.id
+        db.session.execute(
+            text("UPDATE prod_movimiento SET bodega=:b WHERE id=:id"),
+            {"b": destino, "id": mov_dest.id}
         )
 
         db.session.commit()
-        flash('Movimiento registrado ✅', 'success')
+        flash(f"Transferencia realizada: {cantidad} de “{p.nombre}” ({p.acabado}) de {p.bodega} → {destino}", 'success')
         return redirect(url_for('produccion'))
 
-    return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
+    # --- Entrada / Salida simples ---
+    if tipo == 'Entrada':
+        p.cantidad_actual += cantidad
+    elif tipo == 'Salida':
+        if p.cantidad_actual < cantidad:
+            flash('No hay suficiente stock del producto', 'danger')
+            return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
+        p.cantidad_actual -= cantidad
+    else:
+        flash('Tipo inválido', 'danger')
+        return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
 
+    mov = ProdMovimiento(
+        tipo=tipo,
+        cantidad=cantidad,
+        producto=p,
+        fecha=datetime.utcnow()
+    )
+    db.session.add(mov)
+    db.session.flush()  # asegura mov.id
 
+    db.session.execute(
+        text("UPDATE prod_movimiento SET bodega=:b WHERE id=:id"),
+        {"b": p.bodega, "id": mov.id}
+    )
+
+    db.session.commit()
+    flash('Movimiento registrado ✅', 'success')
+    return redirect(url_for('produccion'))
+
+# GET
+return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
 
 @app.route('/historial-produccion')
 @login_required
