@@ -118,8 +118,7 @@ print(">>> DB file:", db_path)
 db = SQLAlchemy(app)
 
 # crea tablas si no existen
-with app.app_context():
-    db.create_all()
+
 
 # -----------------------------------------------------------------------------
 # Modelos
@@ -165,6 +164,7 @@ class ProdMovimiento(db.Model):
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     producto_id = db.Column(db.Integer, db.ForeignKey('producto.id'))
     producto = db.relationship('Producto', backref=db.backref('movimientos', lazy=True))
+    bodega = db.Column(db.String(120)) 
 
 
 class Tarea(db.Model):
@@ -198,6 +198,14 @@ def load_user(user_id):
 # Crear tablas y asegurar columna 'rol'
 with app.app_context():
     db.create_all()
+    try:
+        cols = db.session.execute(text("PRAGMA table_info(prod_movimiento);")).fetchall()
+        colnames = [c[1] for c in cols]
+        if 'bodega' not in colnames:
+            db.session.execute(text("ALTER TABLE prod_movimiento ADD COLUMN bodega VARCHAR(120);"))
+            db.session.commit()
+    except Exception as e:
+        print("Aviso 'bodega en prod_movimiento':", e)
     try:
         cols = db.session.execute(text("PRAGMA table_info(usuarios);")).fetchall()
         colnames = [c[1] for c in cols]
@@ -729,7 +737,8 @@ def movimiento_produccion():
         if not p:
             flash('Producto no encontrado', 'danger')
             return render_template('movimiento_produccion.html', productos=productos)
-
+        if not bodega_sel:
+            bodega_sel = p.bodega
         if tipo == 'Entrada':
             p.cantidad_actual += cantidad
         elif tipo == 'Salida':
