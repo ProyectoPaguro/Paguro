@@ -1,87 +1,72 @@
 {% extends "base.html" %}
-{% block titulo %}Movimientos de producción{% endblock %}
+{% block titulo %}Movimiento de producción{% endblock %}
 
 {% block contenido %}
-<h2 class="text-primary mb-3">Registrar movimiento de producción</h2>
 
-<form method="POST" class="card card-body shadow-sm">
-  <!-- Producto -->
+<h1 class="mb-4 text-primary">Registrar movimiento de producción</h1>
+
+<!-- Paso 1: elegir NOMBRE de producto (recarga por GET para cargar acabados del nombre) -->
+<form method="get" class="mb-3">
+  <label class="form-label">Producto</label>
+  <select name="nombre" class="form-select" onchange="this.form.submit()">
+    {% for n in nombres %}
+      <option value="{{ n }}" {{ 'selected' if n==nombre_sel else '' }}>{{ n }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<!-- Paso 2: formulario principal -->
+<form method="post" class="card card-body shadow-sm">
+  <input type="hidden" name="nombre" value="{{ nombre_sel }}">
+
   <div class="mb-3">
-    <label class="form-label">Producto</label>
-    <select name="producto" class="form-select" id="selProducto" required>
-      {% for p in productos %}
-        <option value="{{ p.id }}">
-          {{ p.nombre }} - {{ p.acabado }} ({{ "%.1f"|format(p.cantidad_actual) }}) — {{ p.bodega }}
-        </option>
+    <label class="form-label">Acabado</label>
+    <select name="acabado" class="form-select" required>
+      {% for a in acabados %}
+        <option value="{{ a }}">{{ a }}</option>
       {% endfor %}
     </select>
   </div>
 
-  <!-- Tipo -->
   <div class="mb-3">
     <label class="form-label">Tipo de movimiento</label>
-    <select name="tipo" id="selTipo" class="form-select" required>
+    <select name="tipo" id="tipo" class="form-select" required>
       <option>Entrada</option>
       <option>Salida</option>
       <option>Transferencia</option>
     </select>
   </div>
 
-  <!-- Bodega destino (solo Transferencia) -->
-  <div class="mb-3" id="grpDestino" style="display:none;">
+  <div id="grupo-destino" class="mb-3" style="display:none;">
     <label class="form-label">Bodega destino</label>
-    <select name="bodega_destino" id="selDestino" class="form-select">
-      <option value="">Selecciona destino...</option>
+    <select name="bodega_destino" class="form-select">
+      <option value="">Selecciona destino…</option>
       {% for b in bodegas %}
         <option value="{{ b }}">{{ b }}</option>
       {% endfor %}
     </select>
-    <div class="form-text">Si transfieres, elige a qué bodega sumaremos el stock.</div>
+    <div class="form-text">Solo para transferencias.</div>
   </div>
 
-  <!-- Cantidad -->
   <div class="mb-3">
     <label class="form-label">Cantidad</label>
-    <input type="number" step="0.01" min="0" name="cantidad" class="form-control" required>
+    <input type="number" name="cantidad" step="0.01" min="0" class="form-control" required>
   </div>
 
   <div class="d-flex gap-2">
     <button class="btn btn-primary">Guardar movimiento</button>
-    <a class="btn btn-outline-secondary" href="{{ url_for('produccion') }}">Volver</a>
+    <a href="{{ url_for('produccion') }}" class="btn btn-outline-secondary">Volver</a>
   </div>
 </form>
 
 <script>
-  const selTipo = document.getElementById('selTipo');
-  const grpDestino = document.getElementById('grpDestino');
-  const selDestino = document.getElementById('selDestino');
-  const selProducto = document.getElementById('selProducto');
-
-  function bodegaActualDeOpcion(txt) {
-    // El option muestra "... — NOMBRE_BODEGA", nos quedamos con lo que va después del guión largo
-    const idx = txt.lastIndexOf('—');
-    return idx >= 0 ? txt.substring(idx+1).trim() : '';
+  const tipo = document.getElementById('tipo');
+  const grupoDestino = document.getElementById('grupo-destino');
+  function toggleDestino(){
+    grupoDestino.style.display = (tipo.value === 'Transferencia') ? 'block' : 'none';
   }
-
-  function refrescarDestino() {
-    const esTransf = selTipo.value === 'Transferencia';
-    grpDestino.style.display = esTransf ? '' : 'none';
-    if (!esTransf) { selDestino.value = ''; return; }
-
-    // Excluir la bodega actual del producto seleccionado
-    const opt = selProducto.options[selProducto.selectedIndex];
-    const bodegaActual = bodegaActualDeOpcion(opt.text);
-
-    // deshabilitar/ocultar la opción igual a la actual
-    [...selDestino.options].forEach(o => {
-      if (!o.value) return;
-      o.disabled = (o.value === bodegaActual);
-      o.hidden = (o.value === bodegaActual);
-    });
-  }
-
-  selTipo.addEventListener('change', refrescarDestino);
-  selProducto.addEventListener('change', refrescarDestino);
-  window.addEventListener('DOMContentLoaded', refrescarDestino);
+  tipo.addEventListener('change', toggleDestino);
+  toggleDestino();
 </script>
+
 {% endblock %}

@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import os
 import io
-from datetime import datetime, date, time as dtime  # ya lo dejaste así en el paso 1
+from datetime import datetime, date, time as dtime  
 
 def rango_hoy():
     hoy = date.today()
-    inicio = datetime.combine(hoy, dtime.min)   # 00:00:00 de hoy
-    fin    = datetime.combine(hoy, dtime.max)   # 23:59:59.999999 de hoy
+    inicio = datetime.combine(hoy, dtime.min)  
+    fin    = datetime.combine(hoy, dtime.max)   
     return inicio, fin
-   # <— time de datetime con alias
-import time as epoch_time                             # <— módulo time con alias
+   
+import time as epoch_time                           
 from pathlib import Path
 
 from flask import (
@@ -28,16 +28,9 @@ from sqlalchemy import func, text, or_
 
 
 
-# Export
+
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
-
-
-
-# -----------------------------------------------------------------------------
-# Config básica
-# -----------------------------------------------------------------------------
-# app.py
 
 
 import os
@@ -48,7 +41,7 @@ app = Flask(__name__, instance_relative_config=True)
 
 from zoneinfo import ZoneInfo
 from datetime import timezone, time as dtime, datetime
-# --- Zona horaria local (por variable de entorno LOCAL_TZ o Bogotá por defecto)
+
 LOCAL_TZ_NAME = os.environ.get("LOCAL_TZ", "America/Bogota")
 LOCAL_TZ = ZoneInfo(LOCAL_TZ_NAME)
 UTC = ZoneInfo("UTC")
@@ -57,7 +50,7 @@ def to_local(dt):
     """Convierte un datetime guardado en UTC (naive) a hora local."""
     if not dt:
         return None
-    # Tus fechas en DB son naive creadas con datetime.utcnow() => trátalas como UTC
+   
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=UTC)
     return dt.astimezone(LOCAL_TZ)
@@ -70,13 +63,13 @@ def fmt_local(dt, fmt="%Y-%m-%d %H:%M"):
 def localdt_filter(dt, fmt="%Y-%m-%d %H:%M"):
     return fmt_local(dt, fmt)
 
-# --- Bodegas disponibles (puedes editarlas o leerlas de una variable de entorno) ---
+
 BODEGAS_FIJAS = [b.strip() for b in os.getenv("BODEGAS", "Tocancipa,Bogotá Prado,Casa Balsa,Ferias").split(",") if b.strip()]
 
 def listar_bodegas():
     """Devuelve bodegas conocidas: fijas + las que existan en BD."""
     otras = [b[0] for b in db.session.query(Producto.bodega).distinct().all() if b[0]]
-    # orden simple y sin duplicados
+   
     vistas = []
     for b in BODEGAS_FIJAS + otras:
         if b and b not in vistas:
@@ -85,7 +78,7 @@ def listar_bodegas():
 
 from zoneinfo import ZoneInfo
 
-LOCAL_TZ = ZoneInfo(os.getenv("LOCAL_TZ", "America/Bogota"))  # cámbiala si necesitas
+LOCAL_TZ = ZoneInfo(os.getenv("LOCAL_TZ", "America/Bogota"))  
 UTC = ZoneInfo("UTC")
 
 def hoy_local_a_utc_bounds():
@@ -93,10 +86,10 @@ def hoy_local_a_utc_bounds():
     ahora_local = datetime.now(LOCAL_TZ)
     ini_local = datetime.combine(ahora_local.date(), dtime.min, tzinfo=LOCAL_TZ)
     fin_local = datetime.combine(ahora_local.date(), dtime.max, tzinfo=LOCAL_TZ)
-    ini_utc = ini_local.astimezone(UTC).replace(tzinfo=None)  # naive UTC para SQLite
+    ini_utc = ini_local.astimezone(UTC).replace(tzinfo=None)  
     fin_utc = fin_local.astimezone(UTC).replace(tzinfo=None)
     return ini_utc, fin_utc
-# --- SECRET KEY (antes de cualquier uso de session/flash/login_manager) ---
+#
 _env_secret = os.environ.get("SECRET_KEY")
 if not _env_secret:
     try:
@@ -107,12 +100,10 @@ if not _env_secret:
 app.config["SECRET_KEY"] = _env_secret
 app.secret_key = _env_secret
 
-# DEBUG (puedes dejarlo por ahora; verifica en Logs de Render que salga True)
+
 print(">>> SECRET_KEY set? ->", bool(app.config.get("SECRET_KEY")))
 
-# --- Base de datos (DEBE ir antes de  ---
-# Usamos el disco persistente de Render en /var/data si existe,
-# y si no, caemos a instance/database.db (local).
+
 DATA_DIR = os.environ.get("DATA_DIR", "/var/data")
 
 if os.path.isdir(DATA_DIR) and os.access(DATA_DIR, os.W_OK):
@@ -129,12 +120,6 @@ print(">>> DB file:", db_path)
 
 db = SQLAlchemy(app)
 
-# crea tablas si no existen
-
-
-# -----------------------------------------------------------------------------
-# Modelos
-# -----------------------------------------------------------------------------
 class Insumo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
@@ -145,7 +130,7 @@ class Insumo(db.Model):
 
 class Movimiento(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    tipo = db.Column(db.String(20), nullable=False)  # Entrada / Salida
+    tipo = db.Column(db.String(20), nullable=False)  
     cantidad = db.Column(db.Float, nullable=False)
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     insumo_id = db.Column(db.Integer, db.ForeignKey('insumo.id'))
@@ -158,7 +143,7 @@ class Usuario(UserMixin, db.Model):
     nombre = db.Column(db.String(100), nullable=False)
     email  = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    rol = db.Column(db.String(20), nullable=False, default='operario')  # admin | operario
+    rol = db.Column(db.String(20), nullable=False, default='operario')  
 
 
 class Producto(db.Model):
@@ -171,10 +156,10 @@ class Producto(db.Model):
 
 class ProdMovimiento(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    tipo = db.Column(db.String(20), nullable=False)    # Entrada / Salida
+    tipo = db.Column(db.String(20), nullable=False)    
     cantidad = db.Column(db.Float, nullable=False)
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
-    bodega = db.Column(db.String(120))                 # <-- NUEVO CAMPO
+    bodega = db.Column(db.String(120))                
     producto_id = db.Column(db.Integer, db.ForeignKey('producto.id'))
     producto = db.relationship('Producto', backref=db.backref('movimientos', lazy=True))
 
@@ -183,22 +168,19 @@ class ProdMovimiento(db.Model):
 
 class Tarea(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    tipo = db.Column(db.String(20), nullable=False)      # 'fundir' | 'pulir'
+    tipo = db.Column(db.String(20), nullable=False)      
     producto = db.Column(db.String(200), nullable=False)
     acabado = db.Column(db.String(120), nullable=False)
-    imagen = db.Column(db.String(255))                   # ruta relativa a /static
+    imagen = db.Column(db.String(255))                   
     fecha = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
-    # Estado unificado
+    
     completada = db.Column(db.Boolean, default=False, nullable=False)
     completada_en = db.Column(db.DateTime)
     completada_por_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     completada_por = db.relationship('Usuario', foreign_keys=[completada_por_id])
 
 
-# -----------------------------------------------------------------------------
-# Login
-# -----------------------------------------------------------------------------
 login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
@@ -208,8 +190,6 @@ def load_user(user_id):
     return db.session.get(Usuario, int(user_id))
 
 
-
-# Crear tablas y asegurar columna 'rol'
 with app.app_context():
     db.create_all()
     try:
@@ -231,9 +211,6 @@ with app.app_context():
     except Exception as e:
         print("Aviso 'rol':", e)
 
-# -----------------------------------------------------------------------------
-# Utilidades
-# -----------------------------------------------------------------------------
 def require_roles(*roles):
     def deco(fn):
         from functools import wraps
@@ -247,7 +224,6 @@ def require_roles(*roles):
         return wrapper
     return deco
 
-# --- Desactivar guardado de imagen por completo ---
 def _save_task_image(file_storage):
     """La carga de imagen está deshabilitada. Siempre devolver None."""
     return None
@@ -257,19 +233,14 @@ def _save_task_image(file_storage):
 def favicon():
     return ('', 204)
 
-# -----------------------------------------------------------------------------
-# Dashboard
-# -----------------------------------------------------------------------------
 @app.route('/')
 @login_required
 def dashboard():
     total_insumos = Insumo.query.count()
     total_productos = Producto.query.count()
 
-    # HOY en hora local (convertido a UTC para comparar en DB)
     ini_hoy_utc, fin_hoy_utc = hoy_local_a_utc_bounds()
 
-    # movimientos de insumos HOY (local)
     movs_hoy = (Movimiento.query
                 .filter(Movimiento.fecha >= ini_hoy_utc,
                         Movimiento.fecha <= fin_hoy_utc)
@@ -278,7 +249,6 @@ def dashboard():
     UMBRAL = 5
     bajos = Insumo.query.filter(Insumo.cantidad_actual < UMBRAL).count()
 
-    # PENDIENTES: SIEMPRE visibles (sin fecha)
     tareas_fundir_pend = (Tarea.query
         .filter(Tarea.tipo=='fundir', Tarea.completada.is_(False))
         .order_by(Tarea.id.desc()).all())
@@ -287,7 +257,6 @@ def dashboard():
         .filter(Tarea.tipo=='pulir', Tarea.completada.is_(False))
         .order_by(Tarea.id.desc()).all())
 
-    # COMPLETADAS HOY (en hora local, usando completada_en)
     tareas_fundir_comp = (Tarea.query
         .filter(Tarea.tipo=='fundir', Tarea.completada.is_(True))
         .filter(Tarea.completada_en >= ini_hoy_utc,
@@ -314,14 +283,11 @@ def dashboard():
     )
 
 
-# -----------------------------------------------------------------------------
-# Tareas
-# -----------------------------------------------------------------------------
 @app.post("/tareas/agregar")
 @login_required
 @require_roles("admin")
 def tareas_agregar():
-    tipo = (request.form.get("tipo") or "").strip().lower()  # 'fundir' | 'pulir'
+    tipo = (request.form.get("tipo") or "").strip().lower()  
     producto = (request.form.get("producto") or "").strip()
     acabado = (request.form.get("acabado") or "").strip()
     if not tipo or not producto or not acabado:
@@ -345,7 +311,6 @@ def tareas_agregar():
     flash("Tarea añadida ✅", "success")
     return redirect(url_for("dashboard"))
 
-# --- Inyectar la ruta actual en todos los templates ---
 @app.context_processor
 def inject_active_path():
     from flask import request
@@ -395,9 +360,9 @@ def tareas_eliminar(tarea_id):
 @app.get('/tareas/historial')
 @login_required
 def historial_tareas():
-    tipo = (request.args.get('tipo') or '').lower()            # 'fundir' | 'pulir' | ''
-    estado = (request.args.get('estado') or '').lower()        # 'pendiente' | 'completada' | ''
-    desde = request.args.get('desde')                          # yyyy-mm-dd
+    tipo = (request.args.get('tipo') or '').lower()            
+    estado = (request.args.get('estado') or '').lower()       
+    desde = request.args.get('desde')                          
     hasta = request.args.get('hasta')
 
     q = Tarea.query
@@ -429,9 +394,6 @@ def historial_tareas():
                            sel_tipo=tipo, sel_estado=estado,
                            sel_desde=desde or '', sel_hasta=hasta or '')
 
-# -----------------------------------------------------------------------------
-# Insumos
-# -----------------------------------------------------------------------------
 @app.route('/inventario', endpoint='inventario')
 @login_required
 def inventario():
@@ -565,9 +527,6 @@ def historial_insumos():
                            sel_desde=desde or '',
                            sel_hasta=hasta or '')
 
-# -----------------------------------------------------------------------------
-# Usuarios
-# -----------------------------------------------------------------------------
 @app.route('/usuarios')
 @login_required
 @require_roles('admin')
@@ -589,9 +548,6 @@ def usuarios_cambiar_rol(user_id):
     flash('Rol actualizado ✅', 'success')
     return redirect(url_for('usuarios'))
 
-# -----------------------------------------------------------------------------
-# Exportaciones Insumos
-# -----------------------------------------------------------------------------
 @app.route('/export/inventario.xlsx')
 @login_required
 @require_roles('admin')
@@ -613,7 +569,6 @@ def export_inventario():
                      download_name='inventario.xlsx',
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
-# --- Exportaciones Insumos (deja SOLO esto) ---
 @app.route('/export/movimientos.xlsx')
 @login_required
 @require_roles('admin')
@@ -638,10 +593,6 @@ def export_movs_insumos():
                      download_name='movimientos.xlsx',
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
-# -----------------------------------------------------------------------------
-# Producción
-# -----------------------------------------------------------------------------
-# app.py
 
 @app.route('/produccion', endpoint='produccion')
 @login_required
@@ -662,15 +613,13 @@ def produccion():
     productos = query.order_by(Producto.nombre.asc()).all()
     return render_template('produccion.html', productos=productos, q=q)
 
-# Alias para compatibilidad con código viejo que llama 'produccion_view'
 app.add_url_rule(
     '/produccion',
     endpoint='produccion_view',
-    view_func=app.view_functions['produccion']   # o simplemente: view_func=produccion
+    view_func=app.view_functions['produccion']  
 )
 
 
-# --------- crear_producto ----------
 @app.route('/productos', methods=['GET', 'POST'], endpoint='crear_producto')
 @login_required
 @require_roles('admin')
@@ -704,8 +653,6 @@ def crear_producto():
 
     return render_template('producto_nuevo.html')
 
-
-# --------- producto_editar ----------
 @app.route('/productos/<int:producto_id>/editar', methods=['GET', 'POST'])
 @login_required
 @require_roles('admin')
@@ -725,7 +672,6 @@ def producto_editar(producto_id):
     return render_template('editar_producto.html', producto=p)
 
 
-# --------- producto_eliminar ----------
 @app.route('/productos/<int:producto_id>/eliminar', methods=['POST'])
 @login_required
 @require_roles('admin')
@@ -738,125 +684,149 @@ def producto_eliminar(producto_id):
     return go_produccion()
 
 
-# --------- movimiento_produccion ----------
 @app.route('/movimiento-produccion', methods=['GET', 'POST'])
 @login_required
 def movimiento_produccion():
-    # Datos para el formulario
-    productos = Producto.query.order_by(Producto.nombre.asc()).all()
-    bodegas_db = [b[0] for b in db.session.query(Producto.bodega).distinct().all() if b[0]]
-    bodegas = sorted({*BODEGAS_FIJAS, *bodegas_db})
+    # Helpers para llenar los combos
+    def _dropdowns(nombre_pref=''):
+        productos_all = Producto.query.order_by(Producto.nombre.asc()).all()
+        nombres = sorted({p.nombre for p in productos_all})
+        nombre_sel = nombre_pref or (nombres[0] if nombres else '')
+        acabados = sorted({p.acabado for p in productos_all if p.nombre == nombre_sel})
+        # bodegas para transferencias
+        bodegas_db = [b[0] for b in db.session.query(Producto.bodega).distinct().all() if b[0]]
+        bodegas = sorted({*BODEGAS_FIJAS, *bodegas_db})
+        return productos_all, nombres, nombre_sel, acabados, bodegas
 
-    if request.method == 'POST':
-        tipo = (request.form.get('tipo') or '').strip()
-        cantidad = float(request.form.get('cantidad') or 0)
-        producto_id = int(request.form.get('producto') or 0)
-        p = Producto.query.get_or_404(producto_id)
+    if request.method == 'GET':
+        nombre_sel = (request.args.get('nombre') or '').strip()
+        productos_all, nombres, nombre_sel, acabados, bodegas = _dropdowns(nombre_sel)
+        return render_template(
+            'movimiento_produccion.html',
+            nombres=nombres, nombre_sel=nombre_sel, acabados=acabados,
+            bodegas=bodegas
+        )
 
-        # --- Transferencia (bodega->bodega) ---
-        if tipo == 'Transferencia':
-            destino = (request.form.get('bodega_destino') or '').strip()
+    # POST
+    # Traemos nombre + acabado en vez de product_id
+    nombre = (request.form.get('nombre') or '').strip()
+    acabado = (request.form.get('acabado') or '').strip()
+    tipo = (request.form.get('tipo') or '').strip()
+    cantidad = float(request.form.get('cantidad') or 0)
 
-            if not destino or destino == p.bodega:
-                flash('Selecciona una bodega destino distinta a la de origen.', 'warning')
-                return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
+    p = Producto.query.filter_by(nombre=nombre, acabado=acabado).first()
+    if not p:
+        productos_all, nombres, nombre_sel, acabados, bodegas = _dropdowns(nombre)
+        flash('Producto/acabado no encontrado.', 'danger')
+        return render_template(
+            'movimiento_produccion.html',
+            nombres=nombres, nombre_sel=nombre_sel, acabados=acabados,
+            bodegas=bodegas
+        )
 
-            if cantidad <= 0:
-                flash('Cantidad inválida.', 'danger')
-                return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
+    productos_all, nombres, nombre_sel, acabados, bodegas = _dropdowns(nombre)
 
-            if p.cantidad_actual < cantidad:
-                flash('No hay suficiente stock del producto', 'danger')
-                return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
+    # --- Transferencia (bodega->bodega) ---
+    if tipo == 'Transferencia':
+        destino = (request.form.get('bodega_destino') or '').strip()
 
-            # 1) Origen: salida
-            p.cantidad_actual -= cantidad
-            mov_origen = ProdMovimiento(
-                tipo='Salida',
-                cantidad=cantidad,
-                producto=p,
-                fecha=datetime.utcnow()
-            )
-            db.session.add(mov_origen)
-            db.session.flush()  # asegura mov_origen.id
+        if not destino or destino == p.bodega:
+            flash('Selecciona una bodega destino distinta a la de origen.', 'warning')
+            return render_template('movimiento_produccion.html',
+                                   nombres=nombres, nombre_sel=nombre_sel, acabados=acabados, bodegas=bodegas)
 
-            # guardar bodega origen en el movimiento
-            db.session.execute(
-                text("UPDATE prod_movimiento SET bodega=:b WHERE id=:id"),
-                {"b": p.bodega, "id": mov_origen.id}
-            )
-
-            # 2) Destino: buscar o crear “mismo nombre+acabado” pero en bodega destino
-            dest = (Producto.query
-                    .filter_by(nombre=p.nombre, acabado=p.acabado, bodega=destino)
-                    .first())
-            if not dest:
-                dest = Producto(
-                    nombre=p.nombre,
-                    acabado=p.acabado,
-                    cantidad_actual=0,
-                    bodega=destino
-                )
-                db.session.add(dest)
-                db.session.flush()
-
-            dest.cantidad_actual += cantidad
-
-            mov_dest = ProdMovimiento(
-                tipo='Entrada',
-                cantidad=cantidad,
-                producto=dest,
-                fecha=datetime.utcnow()
-            )
-            db.session.add(mov_dest)
-            db.session.flush()  # asegura mov_dest.id
-
-            # guardar bodega destino en el movimiento
-            db.session.execute(
-                text("UPDATE prod_movimiento SET bodega=:b WHERE id=:id"),
-                {"b": destino, "id": mov_dest.id}
-            )
-
-            db.session.commit()
-            flash(f"Transferencia realizada: {cantidad} de “{p.nombre}” ({p.acabado}) de {p.bodega} → {destino}", 'success')
-            return redirect(url_for('produccion'))
-
-        # --- Entrada / Salida simples ---
         if cantidad <= 0:
             flash('Cantidad inválida.', 'danger')
-            return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
+            return render_template('movimiento_produccion.html',
+                                   nombres=nombres, nombre_sel=nombre_sel, acabados=acabados, bodegas=bodegas)
 
-        if tipo == 'Entrada':
-            p.cantidad_actual += cantidad
-        elif tipo == 'Salida':
-            if p.cantidad_actual < cantidad:
-                flash('No hay suficiente stock del producto', 'danger')
-                return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
-            p.cantidad_actual -= cantidad
-        else:
-            flash('Tipo inválido', 'danger')
-            return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
+        if p.cantidad_actual < cantidad:
+            flash('No hay suficiente stock del producto', 'danger')
+            return render_template('movimiento_produccion.html',
+                                   nombres=nombres, nombre_sel=nombre_sel, acabados=acabados, bodegas=bodegas)
 
-        mov = ProdMovimiento(
-            tipo=tipo,
+        # 1) Origen: salida
+        p.cantidad_actual -= cantidad
+        mov_origen = ProdMovimiento(
+            tipo='Salida',
             cantidad=cantidad,
             producto=p,
             fecha=datetime.utcnow()
         )
-        db.session.add(mov)
-        db.session.flush()  # asegura mov.id
+        db.session.add(mov_origen)
+        db.session.flush()
 
-        # guarda la bodega actual del producto en el movimiento
         db.session.execute(
             text("UPDATE prod_movimiento SET bodega=:b WHERE id=:id"),
-            {"b": p.bodega, "id": mov.id}
+            {"b": p.bodega, "id": mov_origen.id}
+        )
+
+        # 2) Destino
+        dest = (Producto.query
+                .filter_by(nombre=p.nombre, acabado=p.acabado, bodega=destino)
+                .first())
+        if not dest:
+            dest = Producto(
+                nombre=p.nombre, acabado=p.acabado, cantidad_actual=0, bodega=destino
+            )
+            db.session.add(dest)
+            db.session.flush()
+
+        dest.cantidad_actual += cantidad
+
+        mov_dest = ProdMovimiento(
+            tipo='Entrada',
+            cantidad=cantidad,
+            producto=dest,
+            fecha=datetime.utcnow()
+        )
+        db.session.add(mov_dest)
+        db.session.flush()
+
+        db.session.execute(
+            text("UPDATE prod_movimiento SET bodega=:b WHERE id=:id"),
+            {"b": destino, "id": mov_dest.id}
         )
 
         db.session.commit()
-        flash('Movimiento registrado ✅', 'success')
+        flash(f"Transferencia realizada: {cantidad} de “{p.nombre}” ({p.acabado}) de {p.bodega} → {destino}", 'success')
         return redirect(url_for('produccion'))
 
-    # GET
+    # --- Entrada / Salida simples ---
+    if cantidad <= 0:
+        flash('Cantidad inválida.', 'danger')
+        return render_template('movimiento_produccion.html',
+                               nombres=nombres, nombre_sel=nombre_sel, acabados=acabados, bodegas=bodegas)
+
+    if tipo == 'Entrada':
+        p.cantidad_actual += cantidad
+    elif tipo == 'Salida':
+        if p.cantidad_actual < cantidad:
+            flash('No hay suficiente stock del producto', 'danger')
+            return render_template('movimiento_produccion.html',
+                                   nombres=nombres, nombre_sel=nombre_sel, acabados=acabados, bodegas=bodegas)
+        p.cantidad_actual -= cantidad
+    else:
+        flash('Tipo inválido', 'danger')
+        return render_template('movimiento_produccion.html',
+                               nombres=nombres, nombre_sel=nombre_sel, acabados=acabados, bodegas=bodegas)
+
+    mov = ProdMovimiento(
+        tipo=tipo, cantidad=cantidad, producto=p, fecha=datetime.utcnow()
+    )
+    db.session.add(mov)
+    db.session.flush()
+
+    db.session.execute(
+        text("UPDATE prod_movimiento SET bodega=:b WHERE id=:id"),
+        {"b": p.bodega, "id": mov.id}
+    )
+
+    db.session.commit()
+    flash('Movimiento registrado ✅', 'success')
+    return redirect(url_for('produccion'))
+
+
     return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
 
 
@@ -896,9 +866,6 @@ def historial_produccion():
                            sel_tipo=tipo or '',
                            sel_desde=desde or '',
                            sel_hasta=hasta or '')
-# --- Compatibilidad con nombres antiguos de endpoints ---
-# Si alguna vista/plantilla aún llama url_for('produccion_view'), etc.,
-# mapeamos esos nombres al endpoint actual.
 app.add_url_rule('/produccion',
     endpoint='produccion_view',
     view_func=app.view_functions['produccion']
@@ -918,19 +885,13 @@ from flask import redirect, url_for
 
 def go_produccion():
     try:
-        return redirect(url_for('produccion'))          # nuevo
+        return redirect(url_for('produccion'))       
     except Exception:
         try:
-            return redirect(url_for('produccion_view')) # alias
+            return redirect(url_for('produccion_view')) 
         except Exception:
-            return redirect('/produccion')              # fallback
+            return redirect('/produccion')              
 
-# -----------------------------------------------------------------------------
-# Página de últimos movimientos (insumos)
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# Página de últimos movimientos (insumos)
-# -----------------------------------------------------------------------------
 @app.route('/movimientos', endpoint='movimientos')
 @login_required
 def movimientos():
@@ -943,12 +904,9 @@ def movimientos():
     )
     return render_template('movimientos_recientes.html', movs=movs)
 
-# -----------------------------------------------------------------------------
-# Auth
-# -----------------------------------------------------------------------------
+
 @app.route('/registrar', methods=['GET', 'POST'])
 def registrar():
-    # ¿Ya hay usuarios?
     hay_usuarios = Usuario.query.count() > 0
 
     if hay_usuarios:
@@ -1024,6 +982,5 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-# -----------------------------------------------------------------------------
 if __name__ == '__main__':
     app.run(debug=True)
