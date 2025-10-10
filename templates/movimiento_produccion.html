@@ -1,40 +1,72 @@
 {% extends "base.html" %}
-{% block titulo %}Movimiento Producción{% endblock %}
+{% block titulo %}Movimientos de producción{% endblock %}
 
 {% block contenido %}
-<h2 class="text-primary mb-3">🔄 Registrar movimiento de producción</h2>
+<h1 class="mb-4 text-primary">Registrar movimiento de producción</h1>
 
 <form method="POST" class="card p-3 shadow-sm">
-  <label class="form-label">Producto</label>
-  <select name="producto" class="form-select mb-2" required>
-    <option value="">Selecciona un producto</option>
-    {% for p in productos %}
-    <option value="{{ p.id }}">{{ p.nombre }} - {{ p.acabado }} ({{ p.cantidad_actual }})</option>
-    {% endfor %}
-  </select>
+  <!-- Producto -->
+  <div class="mb-3">
+    <label class="form-label">Producto</label>
+    <select name="producto" class="form-select" required>
+      {% for prod in productos %}
+      <option value="{{ prod.id }}" {{ sel_prod==prod.id and 'selected' or '' }}>
+        {{ prod.nombre }} - {{ prod.acabado }} ({{ '%.1f'|format(prod.cantidad_actual) }}) — {{ prod.bodega }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
 
-  <label class="form-label">Tipo de movimiento</label>
-  <select name="tipo" class="form-select mb-2" required>
-    <option>Entrada</option>
-    <option>Salida</option>
-  </select>
-<div class="mb-3">
-  <label class="form-label">Bodega</label>
-  <select name="bodega" id="bodega" class="form-select">
-    <option value="">(usar la bodega del producto)</option>
-    {% for b in bodegas %}
+  <!-- Tipo -->
+  <div class="mb-3">
+    <label class="form-label">Tipo de movimiento</label>
+    <select name="tipo" id="tipo" class="form-select" required>
+      <option value="Entrada">Entrada</option>
+      <option value="Salida">Salida</option>
+      <option value="Transferencia">Transferencia</option>
+    </select>
+  </div>
+
+  <!-- Bodega destino (sólo para Transferencia) -->
+  <div class="mb-3" id="row-destino" style="display:none;">
+    <label class="form-label">Bodega destino</label>
+    <select name="bodega_destino" class="form-select">
+      <option value="">Selecciona destino…</option>
+      {% for b in bodegas %}
       <option value="{{ b }}">{{ b }}</option>
-    {% endfor %}
-  </select>
-  <div class="form-text">Si no eliges, se usa la bodega del producto.</div>
-</div>
+      {% endfor %}
+    </select>
+    <div class="form-text">Moverá el producto a la bodega elegida (no cambia la cantidad).</div>
+  </div>
 
-  <label class="form-label">Cantidad</label>
-  <input type="number" step="0.01" name="cantidad" class="form-control mb-3" required>
+  <!-- Cantidad (ocultar en Transferencia) -->
+  <div class="mb-3" id="row-cantidad">
+    <label class="form-label">Cantidad</label>
+    <input type="number" step="0.01" min="0" name="cantidad" class="form-control">
+  </div>
 
   <div class="d-flex gap-2">
-    <button type="submit" class="btn btn-primary">Guardar movimiento</button>
-    <a href="/produccion" class="btn btn-secondary">Volver</a>
+    <button class="btn btn-primary">Guardar movimiento</button>
+    <a href="{{ url_for('produccion') }}" class="btn btn-outline-secondary">Volver</a>
   </div>
 </form>
+
+<script>
+  const tipo = document.getElementById('tipo');
+  const rowDestino = document.getElementById('row-destino');
+  const rowCantidad = document.getElementById('row-cantidad');
+
+  function toggleRows() {
+    if (tipo.value === 'Transferencia') {
+      rowDestino.style.display = '';
+      rowCantidad.style.display = 'none';
+    } else {
+      rowDestino.style.display = 'none';
+      rowCantidad.style.display = '';
+    }
+  }
+  tipo.addEventListener('change', toggleRows);
+  toggleRows(); // inicial
+</script>
 {% endblock %}
+

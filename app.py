@@ -729,16 +729,51 @@ def producto_eliminar(producto_id):
 @login_required
 def movimiento_produccion():
     productos = Producto.query.order_by(Producto.nombre.asc()).all()
+
+    # Bodegas disponibles: únicas desde los productos existentes
+    bodegas = sorted({p.bodega for p in productos if p.bodega})
+
     if request.method == 'POST':
-        tipo = request.form.get('tipo')      # Entrada / Salida
-        cantidad = float(request.form.get('cantidad'))
+        tipo = request.form.get('tipo')  # Entrada / Salida / Transferencia
+        cantidad_str = (request.form.get('cantidad') or '').strip()
         producto_id = int(request.form.get('producto'))
         p = Producto.query.get(producto_id)
+
         if not p:
             flash('Producto no encontrado', 'danger')
-            return render_template('movimiento_produccion.html', productos=productos)
-        if not bodega_sel:
-            bodega_sel = p.bodega
+            return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
+
+        # ----- TRANSFERENCIA DE BODEGA -----
+        if tipo == 'Transferencia':
+            destino = (request.form.get('bodega_destino') or '').strip()
+            if not destino:
+                flash('Selecciona la bodega destino.', 'danger')
+                return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas, sel_prod=p.id)
+
+            if destino == p.bodega:
+                flash('La bodega destino debe ser distinta a la actual.', 'warning')
+                return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas, sel_prod=p.id)
+
+            # Registrar el movimiento (opcional: guarda origen/destino en el campo bodega como texto)
+            mov = ProdMovimiento(tipo='Transferencia', cantidad=0.0, producto=p)
+            # Si ya añadiste la columna mov.bodega en tu DB, puedes guardar algo útil:
+            mov.bodega = f'{p.bodega} → {destino}'
+
+            # Cambiar bodega del producto
+            p.bodega = destino
+
+            db.session.add(mov)
+            db.session.commit()
+            flash('Transferencia de bodega registrada ✅', 'success')
+            return redirect(url_for('produccion'))
+
+        # ----- ENTRADA / SALIDA (comportamiento previo) -----
+        try:
+            cantidad = float(cantidad_str.replace(',', '.'))
+        except ValueError:
+            flash('Cantidad inválida.', 'danger')
+            return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas, sel_prod=p.id)
+
         if tipo == 'Entrada':
             p.cantidad_actual += cantidad
         elif tipo == 'Salida':
@@ -746,18 +781,21 @@ def movimiento_produccion():
                 p.cantidad_actual -= cantidad
             else:
                 flash('No hay suficiente stock del producto', 'danger')
-                return render_template('movimiento_produccion.html', productos=productos)
+                return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas, sel_prod=p.id)
         else:
             flash('Tipo inválido', 'danger')
-            return render_template('movimiento_produccion.html', productos=productos)
+            return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas, sel_prod=p.id)
 
         mov = ProdMovimiento(tipo=tipo, cantidad=cantidad, producto=p)
+        # opcional: si quieres registrar la bodega en el movimiento
+        mov.bodega = p.bodega
+
         db.session.add(mov)
         db.session.commit()
         flash('Movimiento registrado ✅', 'success')
-        return go_produccion()
+        return redirect(url_for('produccion'))
 
-    return render_template('movimiento_produccion.html', productos=productos)
+    return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
 
 
 @app.route('/historial-produccion')
