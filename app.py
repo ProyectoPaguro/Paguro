@@ -21,7 +21,10 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import (
     UserMixin, LoginManager, login_user, login_required,
     logout_user, current_user
+    
 )
+from models import Producto, CategoriaInsumo, CategoriaProducto
+
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import func, text, or_
@@ -189,6 +192,8 @@ class Producto(db.Model):
 
     # 🔹 Nueva columna para la categoría
     categoria_id = db.Column(db.Integer, db.ForeignKey('categoria_produccion.id'))
+    categoria = db.relationship('CategoriaProduccion', backref='productos', lazy=True)
+
 
 
 
