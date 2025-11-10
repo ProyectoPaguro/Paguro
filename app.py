@@ -21,17 +21,10 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import (
     UserMixin, LoginManager, login_user, login_required,
     logout_user, current_user
-    
 )
-
-
-
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import func, text, or_
-
-
-
 
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
@@ -170,12 +163,9 @@ class CategoriaProduccion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(80), nullable=False, unique=True)
 
-    # 👇 Cambiamos el backref a algo distinto para no chocar
-    producciones = db.relationship('Produccion', backref='categoria_produccion', lazy=True)
+    productos_produccion = db.relationship('Produccion', backref='categoria_produccion', lazy=True)
     productos = db.relationship('Producto', backref='categoria_producto', lazy=True)
 
-    def __repr__(self):
-        return f'<CategoriaProduccion {self.nombre}>'
 
 
 class Produccion(db.Model):
@@ -193,11 +183,7 @@ class Producto(db.Model):
     acabado = db.Column(db.String(120), nullable=False)
     cantidad_actual = db.Column(db.Float, default=0)
     bodega = db.Column(db.String(120), nullable=False)
-
     categoria_id = db.Column(db.Integer, db.ForeignKey('categoria_produccion.id'))
-
-
-
 
 
 class ProdMovimiento(db.Model):
@@ -269,6 +255,19 @@ def require_roles(*roles):
             return fn(*args, **kwargs)
         return wrapper
     return deco
+from functools import wraps
+from flask import redirect, url_for, flash
+from flask_login import current_user
+
+def admin_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.rol != 'admin':
+            flash("No tienes permisos para acceder a esta sección.", "danger")
+            return redirect(url_for("dashboard"))
+        return f(*args, **kwargs)
+    return wrapper
+
 
 def _save_task_image(file_storage):
     """La carga de imagen está deshabilitada. Siempre devolver None."""
