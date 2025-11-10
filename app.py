@@ -131,23 +131,14 @@ class CategoriaInsumo(db.Model):
 
 
 class Insumo(db.Model):
+    __tablename__ = 'insumo'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
-    unidad = db.Column(db.String(50), nullable=False)
+    unidad = db.Column(db.String(50))
     cantidad_actual = db.Column(db.Float, default=0)
-    bodega = db.Column(db.String(100), nullable=False)
+    bodega = db.Column(db.String(100))
     categoria_id = db.Column(db.Integer, db.ForeignKey('categoria_insumo.id'))
 
-
-
-class Categoria(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(80), nullable=False, unique=True)
-
-    insumos = db.relationship('Insumo', backref='categoria', lazy=True)
-
-    def __repr__(self):
-        return f'<Categoria {self.nombre}>'
 
 
 class Movimiento(db.Model):
