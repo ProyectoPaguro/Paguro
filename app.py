@@ -255,18 +255,6 @@ def require_roles(*roles):
             return fn(*args, **kwargs)
         return wrapper
     return deco
-from functools import wraps
-from flask import redirect, url_for, flash
-from flask_login import current_user
-
-def admin_required(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.rol != 'admin':
-            flash("No tienes permisos para acceder a esta sección.", "danger")
-            return redirect(url_for("dashboard"))
-        return f(*args, **kwargs)
-    return wrapper
 
 
 def _save_task_image(file_storage):
@@ -682,6 +670,10 @@ def export_movs_insumos():
 @login_required
 def produccion():
     q = (request.args.get('q') or '').strip()
+    categoria_id = request.args.get('categoria', type=int)
+
+    # traer lista de categorías
+    categorias = CategoriaProduccion.query.order_by(CategoriaProduccion.nombre.asc()).all()
 
     query = Producto.query
     if q:
@@ -694,8 +686,18 @@ def produccion():
             )
         )
 
+    if categoria_id:
+        query = query.filter(Producto.categoria_id == categoria_id)
+
     productos = query.order_by(Producto.nombre.asc()).all()
-    return render_template('produccion.html', productos=productos, q=q)
+    return render_template(
+        'produccion.html',
+        productos=productos,
+        categorias=categorias,
+        q=q,
+        categoria_id=categoria_id
+    )
+
 
 app.add_url_rule(
     '/produccion',

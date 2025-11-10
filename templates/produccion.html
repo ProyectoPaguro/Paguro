@@ -61,7 +61,7 @@
         <td>{{ p.acabado }}</td>
         <td class="text-end">{{ p.cantidad_actual }}</td>
         <td>{{ p.bodega }}</td>
-        <td>{{ p.categoria.nombre if p.categoria else '-' }}</td>
+        <td>{{ p.categoria_producto.nombre if p.categoria_producto else '-' }}</td>
         {% if current_user.rol == 'admin' %}
         <td class="d-flex gap-1">
           <a href="{{ url_for('producto_editar', producto_id=p.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
