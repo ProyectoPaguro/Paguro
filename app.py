@@ -170,10 +170,13 @@ class CategoriaProduccion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(80), nullable=False, unique=True)
 
-    productos = db.relationship('Produccion', backref='categoria', lazy=True)
+    # 👇 Cambiamos el backref a algo distinto para no chocar
+    producciones = db.relationship('Produccion', backref='categoria_produccion', lazy=True)
+    productos = db.relationship('Producto', backref='categoria_producto', lazy=True)
 
     def __repr__(self):
         return f'<CategoriaProduccion {self.nombre}>'
+
 
 class Produccion(db.Model):
     __tablename__ = 'produccion'
@@ -183,17 +186,16 @@ class Produccion(db.Model):
     unidad = db.Column(db.String(50), nullable=False)
     categoria_id = db.Column(db.Integer, db.ForeignKey('categoria_produccion.id'))
 
-
 class Producto(db.Model):
+    __tablename__ = 'producto'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(120), nullable=False)
     acabado = db.Column(db.String(120), nullable=False)
     cantidad_actual = db.Column(db.Float, default=0)
     bodega = db.Column(db.String(120), nullable=False)
 
-    # 🔹 Nueva columna para la categoría
     categoria_id = db.Column(db.Integer, db.ForeignKey('categoria_produccion.id'))
-    categoria = db.relationship('CategoriaProduccion', backref='productos', lazy=True)
+
 
 
 
