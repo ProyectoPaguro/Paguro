@@ -17,6 +17,23 @@
   <label class="form-label">Bodega</label>
   <input type="text" name="bodega" value="{{ producto.bodega }}" class="form-control mb-3" required>
 
+  <div class="mb-3">
+  <label class="form-label">Categoría existente</label>
+  <select name="categoria_id" class="form-select">
+    <option value="">Sin categoría</option>
+    {% for c in categorias %}
+      <option value="{{ c.id }}" {% if producto.categoria_id == c.id %}selected{% endif %}>
+        {{ c.nombre }}
+      </option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="mb-3">
+  <label class="form-label">O crear nueva categoría</label>
+  <input type="text" name="categoria_nombre" class="form-control" placeholder="Ej. Fundición, Pulido, Ensamble...">
+</div>
+
   <div class="d-flex gap-2">
     <button class="btn btn-primary">Guardar cambios</button>
     <a href="/produccion" class="btn btn-secondary">Cancelar</a>
