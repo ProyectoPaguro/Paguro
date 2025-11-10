@@ -5,30 +5,46 @@
 <h2 class="text-success mb-3">➕ Agregar nuevo insumo</h2>
 
 <form action="/insumos" method="POST" class="card p-3 shadow-sm">
-  <label class="form-label">Nombre del insumo</label>
-  <input type="text" name="nombre" class="form-control mb-2" required>
 
-  <label class="form-label">Unidad de medida</label>
-  <input type="text" name="unidad" class="form-control mb-2" placeholder="Ej.: kg, unidades, litros" required>
+  <div class="mb-3">
+    <label class="form-label">Nombre del insumo</label>
+    <input type="text" name="nombre" class="form-control" required>
+  </div>
 
-  <label class="form-label">Cantidad inicial</label>
-  <input type="number" step="0.01" name="cantidad" class="form-control mb-2" required>
+  <div class="mb-3">
+    <label class="form-label">Unidad de medida</label>
+    <input type="text" name="unidad" class="form-control" placeholder="Ej.: kg, unidades, litros" required>
+  </div>
 
-  <label class="form-label">Bodega</label>
-  <input type="text" name="bodega" class="form-control mb-3" placeholder="Principal, Norte, etc." required>
-<div class="mb-3">
-  <label>Categoría</label>
-  <select name="categoria_id" class="form-select">
-    <option value="">(Sin categoría)</option>
-    {% for c in categorias %}
-      <option value="{{ c.id }}">{{ c.nombre }}</option>
-    {% endfor %}
-  </select>
-</div>
+  <div class="mb-3">
+    <label class="form-label">Cantidad inicial</label>
+    <input type="number" step="0.01" name="cantidad" class="form-control" required>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Bodega</label>
+    <input type="text" name="bodega" class="form-control" placeholder="Principal, Norte, etc." required>
+  </div>
+
+  <div class="mb-3">
+    <label for="categoria" class="form-label">Categoría existente:</label>
+    <select name="categoria_id" class="form-select">
+      <option value="">(Sin categoría)</option>
+      {% for c in categorias %}
+        <option value="{{ c.id }}">{{ c.nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label for="categoria_nombre" class="form-label">O crear nueva categoría:</label>
+    <input type="text" class="form-control" name="categoria_nombre" placeholder="Ej: Químicos, Papelería...">
+  </div>
 
   <div class="d-flex gap-2">
     <button type="submit" class="btn btn-success">Guardar</button>
     <a href="/inventario" class="btn btn-secondary">Volver</a>
   </div>
+
 </form>
 {% endblock %}

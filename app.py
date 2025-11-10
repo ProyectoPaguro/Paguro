@@ -121,13 +121,13 @@ print(">>> DB file:", db_path)
 db = SQLAlchemy(app)
 
 class CategoriaInsumo(db.Model):
-    __tablename__ = 'categoria_insumo'
-
     id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False, unique=True)
-    descripcion = db.Column(db.String(255))
-
+    nombre = db.Column(db.String(80), nullable=False, unique=True)
     insumos = db.relationship('Insumo', backref='categoria', lazy=True)
+
+    def __repr__(self):
+        return f'<CategoriaInsumo {self.nombre}>'
+
 
 
 class Insumo(db.Model):
@@ -136,7 +136,8 @@ class Insumo(db.Model):
     unidad = db.Column(db.String(50), nullable=False)
     cantidad_actual = db.Column(db.Float, default=0)
     bodega = db.Column(db.String(100), nullable=False)
-    categoria_id = db.Column(db.Integer, db.ForeignKey('categoria.id'))
+    categoria_id = db.Column(db.Integer, db.ForeignKey('categoria_insumo.id'))
+
 
 
 class Categoria(db.Model):
@@ -438,23 +439,26 @@ def inventario():
     )
 
 
-@app.route('/insumos', methods=['GET', 'POST'], endpoint='insumos_create')
+@app.route('/insumos', methods=['GET', 'POST'])
 @login_required
 @require_roles('admin')
 def insumos_create():
-    # Obtener todas las categorías ordenadas por nombre
-    categorias = Categoria.query.order_by(Categoria.nombre.asc()).all()
+    categorias = CategoriaInsumo.query.order_by(CategoriaInsumo.nombre.asc()).all()
 
     if request.method == 'POST':
         nombre = request.form.get('nombre')
         unidad = request.form.get('unidad')
         cantidad = request.form.get('cantidad')
         bodega = request.form.get('bodega')
+        categoria_nombre = request.form.get('categoria_nombre')
         categoria_id = request.form.get('categoria_id')
 
-        if not (nombre and unidad and cantidad and bodega):
-            flash('Faltan datos', 'danger')
-            return render_template('insumos.html', categorias=categorias)
+        # Si el usuario escribió una nueva categoría
+        if categoria_nombre:
+            nueva_cat = CategoriaInsumo(nombre=categoria_nombre.strip())
+            db.session.add(nueva_cat)
+            db.session.commit()
+            categoria_id = nueva_cat.id
 
         nuevo = Insumo(
             nombre=nombre.strip(),
@@ -465,77 +469,11 @@ def insumos_create():
         )
         db.session.add(nuevo)
         db.session.commit()
-        flash('✅ Insumo creado correctamente', 'success')
+        flash('Insumo creado ✅', 'success')
         return redirect(url_for('inventario'))
 
     return render_template('insumos.html', categorias=categorias)
 
-# =========================================
-#     RUTAS PARA GESTIONAR CATEGORÍAS
-# =========================================
-@app.route('/categorias', methods=['GET', 'POST'])
-@login_required
-@require_roles('admin')
-def categorias():
-    # Mostrar todas las categorías existentes
-    categorias = Categoria.query.order_by(Categoria.nombre.asc()).all()
-
-    # Si se envía el formulario para crear una nueva categoría
-    if request.method == 'POST':
-        nombre = request.form.get('nombre', '').strip()
-
-        if not nombre:
-            flash('⚠️ Debes ingresar un nombre para la categoría', 'warning')
-        elif Categoria.query.filter_by(nombre=nombre).first():
-            flash('❌ Ya existe una categoría con ese nombre', 'danger')
-        else:
-            nueva = Categoria(nombre=nombre)
-            db.session.add(nueva)
-            db.session.commit()
-            flash('✅ Categoría creada correctamente', 'success')
-        return redirect(url_for('categorias'))
-
-    return render_template('categorias.html', categorias=categorias)
-
-
-@app.route('/categorias/<int:id>/eliminar', methods=['POST'])
-@login_required
-@require_roles('admin')
-def eliminar_categoria(id):
-    categoria = Categoria.query.get_or_404(id)
-
-    # Evitar borrar si tiene insumos asociados
-    if categoria.insumos:
-        flash('❌ No puedes eliminar esta categoría porque tiene insumos asociados.', 'danger')
-        return redirect(url_for('categorias'))
-
-    db.session.delete(categoria)
-    db.session.commit()
-    flash('✅ Categoría eliminada correctamente', 'success')
-    return redirect(url_for('categorias'))
-
-
-@app.route('/insumos/<int:insumo_id>/editar', methods=['GET', 'POST'])
-@login_required
-@require_roles('admin')
-def editar_insumo(insumo_id):
-    ins = Insumo.query.get_or_404(insumo_id)
-    categorias = CategoriaInsumo.query.order_by(CategoriaInsumo.nombre.asc()).all()
-
-    if request.method == 'POST':
-        ins.nombre = request.form.get('nombre', ins.nombre).strip()
-        ins.unidad = request.form.get('unidad', ins.unidad).strip()
-        ins.bodega = request.form.get('bodega', ins.bodega).strip()
-        cat_id = request.form.get('categoria_id')
-        ins.categoria_id = int(cat_id) if cat_id else None
-
-        if request.form.get('cantidad_actual') not in (None, ''):
-            ins.cantidad_actual = float(request.form.get('cantidad_actual'))
-        db.session.commit()
-        flash('Insumo actualizado ✅', 'success')
-        return redirect(url_for('inventario'))
-
-    return render_template('editar_insumo.html', insumo=ins, categorias=categorias)
 
 
 @app.route('/insumos/<int:insumo_id>/eliminar', methods=['POST'])
