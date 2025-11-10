@@ -3,7 +3,22 @@
 
 {% block contenido %}
 <h1 class="mb-4 text-primary">Inventario</h1>
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Inventario de Insumos</h2>
 
+  
+  <form method="get" class="mb-3">
+    <select name="categoria" class="form-select w-auto d-inline" onchange="this.form.submit()">
+      <option value="">Todas las categorías</option>
+      {% for c in categorias %}
+        <option value="{{ c.id }}" {% if request.args.get('categoria', type=int) == c.id %}selected{% endif %}>
+          {{ c.nombre }}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
 <table class="table table-bordered table-striped shadow-sm">
   <thead class="table-dark">
     <tr>
@@ -11,6 +26,7 @@
       <th>Unidad</th>
       <th>Cantidad actual</th>
       <th>Bodega</th>
+      <th>Categoría</th>
       {% if current_user.rol == 'admin' %}<th>Acciones</th>{% endif %}
     </tr>
   </thead>
@@ -21,6 +37,7 @@
       <td>{{ i.unidad }}</td>
       <td>{{ i.cantidad_actual }}</td>
       <td>{{ i.bodega }}</td>
+      <td>{{ i.categoria.nombre if i.categoria else '-' }}</td>
       {% if current_user.rol == 'admin' %}
       <td class="d-flex gap-1">
         <a href="/insumos/{{ i.id }}/editar" class="btn btn-sm btn-outline-primary">Editar</a>

@@ -120,12 +120,23 @@ print(">>> DB file:", db_path)
 
 db = SQLAlchemy(app)
 
+class CategoriaInsumo(db.Model):
+    __tablename__ = 'categoria_insumo'
+
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True)
+    descripcion = db.Column(db.String(255))
+
+    insumos = db.relationship('Insumo', backref='categoria', lazy=True)
+
+
 class Insumo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     unidad = db.Column(db.String(50), nullable=False)
     cantidad_actual = db.Column(db.Float, default=0)
     bodega = db.Column(db.String(100), nullable=False)
+    categoria_id = db.Column(db.Integer, db.ForeignKey('categoria_insumo.id'))
 
 
 class Movimiento(db.Model):
@@ -397,53 +408,81 @@ def historial_tareas():
 @app.route('/inventario', endpoint='inventario')
 @login_required
 def inventario():
-    insumos = Insumo.query.order_by(Insumo.nombre.asc()).all()
+    categoria_id = request.args.get('categoria', type=int)
+    categorias = CategoriaInsumo.query.order_by(CategoriaInsumo.nombre.asc()).all()
+
+    query = Insumo.query
+    if categoria_id:
+        query = query.filter_by(categoria_id=categoria_id)
+
+    insumos = query.order_by(Insumo.nombre.asc()).all()
     nombres = [i.nombre for i in insumos]
     cantidades = [i.cantidad_actual for i in insumos]
-    return render_template('inventario.html', insumos=insumos,
-                           nombres=nombres, cantidades=cantidades)
+
+    return render_template(
+        'inventario.html',
+        insumos=insumos,
+        nombres=nombres,
+        cantidades=cantidades,
+        categorias=categorias
+    )
+
 
 @app.route('/insumos', methods=['GET', 'POST'], endpoint='insumos_create')
 @login_required
 @require_roles('admin')
 def insumos_create():
+    from app import CategoriaInsumo  # si está en el mismo archivo no hace falta
+    categorias = CategoriaInsumo.query.order_by(CategoriaInsumo.nombre.asc()).all()
+
     if request.method == 'POST':
         nombre = request.form.get('nombre')
         unidad = request.form.get('unidad')
         cantidad = request.form.get('cantidad')
         bodega = request.form.get('bodega')
+        categoria_id = request.form.get('categoria_id')
 
         if not (nombre and unidad and cantidad and bodega):
             flash('Faltan datos', 'danger')
-            return render_template('insumos.html')
+            return render_template('insumos.html', categorias=categorias)
 
         nuevo = Insumo(
             nombre=nombre.strip(),
             unidad=unidad.strip(),
             cantidad_actual=float(cantidad),
-            bodega=bodega.strip()
+            bodega=bodega.strip(),
+            categoria_id=int(categoria_id) if categoria_id else None
         )
         db.session.add(nuevo)
         db.session.commit()
         flash('Insumo creado ✅', 'success')
         return redirect(url_for('inventario'))
-    return render_template('insumos.html')
+
+    return render_template('insumos.html', categorias=categorias)
+
 
 @app.route('/insumos/<int:insumo_id>/editar', methods=['GET', 'POST'])
 @login_required
 @require_roles('admin')
 def editar_insumo(insumo_id):
     ins = Insumo.query.get_or_404(insumo_id)
+    categorias = CategoriaInsumo.query.order_by(CategoriaInsumo.nombre.asc()).all()
+
     if request.method == 'POST':
         ins.nombre = request.form.get('nombre', ins.nombre).strip()
         ins.unidad = request.form.get('unidad', ins.unidad).strip()
         ins.bodega = request.form.get('bodega', ins.bodega).strip()
+        cat_id = request.form.get('categoria_id')
+        ins.categoria_id = int(cat_id) if cat_id else None
+
         if request.form.get('cantidad_actual') not in (None, ''):
             ins.cantidad_actual = float(request.form.get('cantidad_actual'))
         db.session.commit()
         flash('Insumo actualizado ✅', 'success')
         return redirect(url_for('inventario'))
-    return render_template('editar_insumo.html', insumo=ins)
+
+    return render_template('editar_insumo.html', insumo=ins, categorias=categorias)
+
 
 @app.route('/insumos/<int:insumo_id>/eliminar', methods=['POST'])
 @login_required
@@ -981,6 +1020,26 @@ def _routes():
 def logout():
     logout_user()
     return redirect(url_for('login'))
+
+@app.route('/categorias', methods=['GET', 'POST'])
+@login_required
+@require_roles('admin')
+def categorias():
+    if request.method == 'POST':
+        nombre = (request.form.get('nombre') or '').strip()
+        descripcion = (request.form.get('descripcion') or '').strip()
+        if not nombre:
+            flash('El nombre de la categoría es obligatorio.', 'warning')
+        else:
+            nueva = CategoriaInsumo(nombre=nombre, descripcion=descripcion)
+            db.session.add(nueva)
+            db.session.commit()
+            flash('Categoría creada ✅', 'success')
+        return redirect(url_for('categorias'))
+
+    categorias = CategoriaInsumo.query.order_by(CategoriaInsumo.nombre.asc()).all()
+    return render_template('categorias.html', categorias=categorias)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

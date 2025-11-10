@@ -21,5 +21,17 @@
     <button class="btn btn-primary">Guardar cambios</button>
     <a href="/inventario" class="btn btn-secondary">Cancelar</a>
   </div>
+  <div class="mb-3">
+  <label>Categoría</label>
+  <select name="categoria_id" class="form-select">
+    <option value="">(Sin categoría)</option>
+    {% for c in categorias %}
+      <option value="{{ c.id }}" {% if insumo.categoria_id == c.id %}selected{% endif %}>
+        {{ c.nombre }}
+      </option>
+    {% endfor %}
+  </select>
+</div>
+
 </form>
 {% endblock %}

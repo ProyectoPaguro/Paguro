@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">Categorías de Insumos</h2>
+
+  <form method="POST" class="mb-4">
+    <div class="row g-2">
+      <div class="col-md-4">
+        <input type="text" name="nombre" class="form-control" placeholder="Nombre de categoría" required>
+      </div>
+      <div class="col-md-6">
+        <input type="text" name="descripcion" class="form-control" placeholder="Descripción (opcional)">
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-primary w-100">Agregar</button>
+      </div>
+    </div>
+  </form>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Descripción</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in categorias %}
+      <tr>
+        <td>{{ c.nombre }}</td>
+        <td>{{ c.descripcion or '-' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
