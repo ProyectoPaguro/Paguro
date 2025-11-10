@@ -161,6 +161,24 @@ class Usuario(UserMixin, db.Model):
     password = db.Column(db.String(200), nullable=False)
     rol = db.Column(db.String(20), nullable=False, default='operario')  
 
+class CategoriaProduccion(db.Model):
+    __tablename__ = 'categoria_produccion'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(80), nullable=False, unique=True)
+
+    productos = db.relationship('Produccion', backref='categoria', lazy=True)
+
+    def __repr__(self):
+        return f'<CategoriaProduccion {self.nombre}>'
+
+class Produccion(db.Model):
+    __tablename__ = 'produccion'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    cantidad = db.Column(db.Float, default=0)
+    unidad = db.Column(db.String(50), nullable=False)
+    categoria_id = db.Column(db.Integer, db.ForeignKey('categoria_produccion.id'))
+
 
 class Producto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -168,6 +186,10 @@ class Producto(db.Model):
     acabado = db.Column(db.String(120), nullable=False)
     cantidad_actual = db.Column(db.Float, default=0)
     bodega = db.Column(db.String(120), nullable=False)
+
+    # 🔹 Nueva columna para la categoría
+    categoria_id = db.Column(db.Integer, db.ForeignKey('categoria_produccion.id'))
+
 
 
 class ProdMovimiento(db.Model):
@@ -674,22 +696,27 @@ app.add_url_rule(
     view_func=app.view_functions['produccion']  
 )
 
-
 @app.route('/productos', methods=['GET', 'POST'], endpoint='crear_producto')
 @login_required
 @require_roles('admin')
 def crear_producto():
+    categorias = CategoriaProduccion.query.order_by(CategoriaProduccion.nombre.asc()).all()
+
     if request.method == 'POST':
         nombre = (request.form.get('nombre') or '').strip()
         acabado = (request.form.get('acabado') or '').strip()
         cantidad_str = (request.form.get('cantidad') or '').strip()
         bodega = (request.form.get('bodega') or '').strip()
+        categoria_nombre = (request.form.get('categoria_nombre') or '').strip()
+        categoria_id = request.form.get('categoria_id')
 
+        # Validaciones
         if not nombre or not acabado or not cantidad_str or not bodega:
             flash('Faltan datos.', 'danger')
             return render_template('producto_nuevo.html',
                                    nombre=nombre, acabado=acabado,
-                                   cantidad=cantidad_str, bodega=bodega)
+                                   cantidad=cantidad_str, bodega=bodega,
+                                   categorias=categorias)
 
         cantidad_str = cantidad_str.replace(',', '.')
         try:
@@ -698,15 +725,30 @@ def crear_producto():
             flash('Cantidad inválida.', 'danger')
             return render_template('producto_nuevo.html',
                                    nombre=nombre, acabado=acabado,
-                                   cantidad=cantidad_str, bodega=bodega)
+                                   cantidad=cantidad_str, bodega=bodega,
+                                   categorias=categorias)
 
-        p = Producto(nombre=nombre, acabado=acabado, cantidad_actual=cantidad, bodega=bodega)
-        db.session.add(p)
+        # Si el usuario escribió una nueva categoría
+        if categoria_nombre:
+            nueva_cat = CategoriaProduccion(nombre=categoria_nombre)
+            db.session.add(nueva_cat)
+            db.session.commit()
+            categoria_id = nueva_cat.id
+
+        nuevo = Producto(
+            nombre=nombre,
+            acabado=acabado,
+            cantidad_actual=cantidad,
+            bodega=bodega,
+            categoria_id=int(categoria_id) if categoria_id else None
+        )
+        db.session.add(nuevo)
         db.session.commit()
         flash('Producto creado ✅', 'success')
         return go_produccion()
 
-    return render_template('producto_nuevo.html')
+    return render_template('producto_nuevo.html', categorias=categorias)
+
 
 @app.route('/productos/<int:producto_id>/editar', methods=['GET', 'POST'])
 @login_required
