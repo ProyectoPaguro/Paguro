@@ -1,37 +1,40 @@
 {% extends "base.html" %}
-{% block titulo %}Editar insumo{% endblock %}
+{% block titulo %}Editar Insumo{% endblock %}
 
 {% block contenido %}
 <h2 class="text-primary mb-3">✏️ Editar insumo</h2>
 
-<form method="POST" class="card p-3 shadow-sm">
-  <label class="form-label">Nombre</label>
-  <input type="text" name="nombre" value="{{ insumo.nombre }}" class="form-control mb-2" required>
+<form action="{{ url_for('editar_insumo', insumo_id=insumo.id) }}" method="POST" class="card p-3 shadow-sm">
+  <label class="form-label">Nombre del insumo</label>
+  <input type="text" name="nombre" class="form-control mb-2" value="{{ insumo.nombre }}" required>
 
-  <label class="form-label">Unidad</label>
-  <input type="text" name="unidad" value="{{ insumo.unidad }}" class="form-control mb-2" required>
+  <label class="form-label">Unidad de medida</label>
+  <input type="text" name="unidad" class="form-control mb-2" value="{{ insumo.unidad }}" required>
 
   <label class="form-label">Cantidad actual</label>
-  <input type="number" step="0.01" name="cantidad_actual" value="{{ insumo.cantidad_actual }}" class="form-control mb-2">
+  <input type="number" step="0.01" name="cantidad" class="form-control mb-2" value="{{ insumo.cantidad_actual }}" required>
 
   <label class="form-label">Bodega</label>
-  <input type="text" name="bodega" value="{{ insumo.bodega }}" class="form-control mb-3" required>
+  <input type="text" name="bodega" class="form-control mb-3" value="{{ insumo.bodega }}" required>
+
+  <div class="mb-3">
+    <label class="form-label">Categoría existente</label>
+    <select name="categoria_id" class="form-select">
+      <option value="">(Sin categoría)</option>
+      {% for c in categorias %}
+        <option value="{{ c.id }}" {% if insumo.categoria_id == c.id %}selected{% endif %}>{{ c.nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">O crear nueva categoría</label>
+    <input type="text" class="form-control" name="categoria_nombre" placeholder="Ej: Químicos, Papelería...">
+  </div>
 
   <div class="d-flex gap-2">
-    <button class="btn btn-primary">Guardar cambios</button>
-    <a href="/inventario" class="btn btn-secondary">Cancelar</a>
+    <button type="submit" class="btn btn-success">Guardar cambios</button>
+    <a href="{{ url_for('inventario') }}" class="btn btn-secondary">Cancelar</a>
   </div>
-  <div class="mb-3">
-  <label>Categoría</label>
-  <select name="categoria_id" class="form-select">
-    <option value="">(Sin categoría)</option>
-    {% for c in categorias %}
-      <option value="{{ c.id }}" {% if insumo.categoria_id == c.id %}selected{% endif %}>
-        {{ c.nombre }}
-      </option>
-    {% endfor %}
-  </select>
-</div>
-
 </form>
 {% endblock %}

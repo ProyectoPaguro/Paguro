@@ -468,6 +468,36 @@ def insumos_create():
 
     return render_template('insumos.html', categorias=categorias)
 
+@app.route('/insumos/<int:insumo_id>/editar', methods=['GET', 'POST'])
+@login_required
+@require_roles('admin')
+def editar_insumo(insumo_id):
+    insumo = Insumo.query.get_or_404(insumo_id)
+    categorias = CategoriaInsumo.query.order_by(CategoriaInsumo.nombre.asc()).all()
+
+    if request.method == 'POST':
+        insumo.nombre = request.form.get('nombre', insumo.nombre).strip()
+        insumo.unidad = request.form.get('unidad', insumo.unidad).strip()
+        insumo.cantidad_actual = float(request.form.get('cantidad', insumo.cantidad_actual))
+        insumo.bodega = request.form.get('bodega', insumo.bodega).strip()
+
+        # Actualizar categoría (existente o nueva)
+        categoria_nombre = request.form.get('categoria_nombre')
+        categoria_id = request.form.get('categoria_id')
+
+        if categoria_nombre:
+            nueva_cat = CategoriaInsumo(nombre=categoria_nombre.strip())
+            db.session.add(nueva_cat)
+            db.session.commit()
+            insumo.categoria_id = nueva_cat.id
+        elif categoria_id:
+            insumo.categoria_id = int(categoria_id)
+
+        db.session.commit()
+        flash('Insumo actualizado ✅', 'success')
+        return redirect(url_for('inventario'))
+
+    return render_template('editar_insumo.html', insumo=insumo, categorias=categorias)
 
 
 @app.route('/insumos/<int:insumo_id>/eliminar', methods=['POST'])
