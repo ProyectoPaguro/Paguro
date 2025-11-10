@@ -760,34 +760,36 @@ def crear_producto():
 
 @app.route('/producto/<int:producto_id>/editar', methods=['GET', 'POST'])
 @login_required
-@require_roles('admin')
+@admin_required
 def producto_editar(producto_id):
     producto = Producto.query.get_or_404(producto_id)
-    categorias = CategoriaProducto.query.order_by(CategoriaProducto.nombre.asc()).all()
+    categorias = CategoriaProduccion.query.order_by(CategoriaProduccion.nombre.asc()).all()  # ✅ CORREGIDO
 
     if request.method == 'POST':
-        producto.nombre = request.form.get('nombre')
-        producto.acabado = request.form.get('acabado')
-        producto.cantidad_actual = float(request.form.get('cantidad_actual') or 0)
-        producto.bodega = request.form.get('bodega')
+        producto.nombre = request.form['nombre']
+        producto.acabado = request.form['acabado']
+        producto.cantidad_actual = float(request.form['cantidad_actual'])
+        producto.bodega = request.form['bodega']
 
-        categoria_nombre = request.form.get('categoria_nombre')
         categoria_id = request.form.get('categoria_id')
+        categoria_nombre = request.form.get('categoria_nombre')
 
-        # Si el usuario escribió una nueva categoría
-        if categoria_nombre:
-            nueva_cat = CategoriaProducto(nombre=categoria_nombre.strip())
+        if categoria_nombre:  # si crea una nueva categoría
+            nueva_cat = CategoriaProduccion(nombre=categoria_nombre)
             db.session.add(nueva_cat)
             db.session.commit()
             producto.categoria_id = nueva_cat.id
+        elif categoria_id:
+            producto.categoria_id = categoria_id
         else:
-            producto.categoria_id = int(categoria_id) if categoria_id else None
+            producto.categoria_id = None
 
         db.session.commit()
-        flash('Producto actualizado ✅', 'success')
+        flash('Producto actualizado correctamente.', 'success')
         return redirect(url_for('produccion'))
 
     return render_template('editar_producto.html', producto=producto, categorias=categorias)
+
 
 
 
