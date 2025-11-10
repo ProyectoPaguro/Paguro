@@ -1,50 +1,56 @@
 {% extends "base.html" %}
-{% block titulo %}Editar Insumo{% endblock %}
+{% block titulo %}Inventario{% endblock %}
 
 {% block contenido %}
 <div class="container mt-4">
-  <h2 class="text-primary mb-4">✏️ Editar Insumo</h2>
+  <h2 class="mb-4 text-primary">Inventario de Insumos</h2>
 
-  <form action="{{ url_for('editar_insumo', insumo_id=insumo.id) }}" method="POST" class="card p-4 shadow-sm">
-    <div class="mb-3">
-      <label class="form-label">Nombre</label>
-      <input type="text" name="nombre" class="form-control" value="{{ insumo.nombre }}" required>
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label">Unidad</label>
-      <input type="text" name="unidad" class="form-control" value="{{ insumo.unidad }}" required>
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label">Cantidad actual</label>
-      <input type="number" step="0.01" name="cantidad" class="form-control" value="{{ insumo.cantidad_actual }}" required>
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label">Bodega</label>
-      <input type="text" name="bodega" class="form-control" value="{{ insumo.bodega }}" required>
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label">Categoría existente</label>
-      <select name="categoria_id" class="form-select">
-        <option value="">(Sin categoría)</option>
-        {% for c in categorias %}
-          <option value="{{ c.id }}" {% if insumo.categoria_id == c.id %}selected{% endif %}>{{ c.nombre }}</option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label">O crear nueva categoría</label>
-      <input type="text" name="categoria_nombre" class="form-control" placeholder="Nueva categoría">
-    </div>
-
-    <div class="d-flex gap-2">
-      <button type="submit" class="btn btn-success">Guardar cambios</button>
-      <a href="{{ url_for('inventario') }}" class="btn btn-secondary">Cancelar</a>
-    </div>
+  <form method="get" class="mb-3">
+    <select name="categoria" class="form-select" onchange="this.form.submit()">
+      <option value="">Todas las categorías</option>
+      {% for c in categorias %}
+        <option value="{{ c.id }}" {% if request.args.get('categoria')|int == c.id %}selected{% endif %}>
+          {{ c.nombre }}
+        </option>
+      {% endfor %}
+    </select>
   </form>
+
+  <table class="table table-bordered table-striped shadow-sm">
+    <thead class="table-dark">
+      <tr>
+        <th>Nombre</th>
+        <th>Unidad</th>
+        <th>Cantidad actual</th>
+        <th>Bodega</th>
+        <th>Categoría</th>
+        {% if current_user.rol == 'admin' %}
+          <th>Acciones</th>
+        {% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for i in insumos %}
+      <tr>
+        <td>{{ i.nombre }}</td>
+        <td>{{ i.unidad }}</td>
+        <td>{{ i.cantidad_actual }}</td>
+        <td>{{ i.bodega }}</td>
+        <td>{{ i.categoria.nombre if i.categoria else '-' }}</td>
+        {% if current_user.rol == 'admin' %}
+        <td class="d-flex gap-1">
+          <a href="/insumos/{{ i.id }}/editar" class="btn btn-sm btn-outline-primary">Editar</a>
+          <form action="/insumos/{{ i.id }}/eliminar" method="POST"
+                onsubmit="return confirm('¿Eliminar {{ i.nombre }}? También se borrará su historial.');">
+            <button class="btn btn-sm btn-outline-danger">Eliminar</button>
+          </form>
+        </td>
+        {% endif %}
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="text-center text-muted">No hay insumos registrados</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endblock %}
