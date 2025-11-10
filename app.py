@@ -121,12 +121,15 @@ print(">>> DB file:", db_path)
 db = SQLAlchemy(app)
 
 class CategoriaInsumo(db.Model):
+    __tablename__ = 'categoria_insumo'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(80), nullable=False, unique=True)
+    descripcion = db.Column(db.String(200))  # ✅ agregado
     insumos = db.relationship('Insumo', backref='categoria', lazy=True)
 
     def __repr__(self):
         return f'<CategoriaInsumo {self.nombre}>'
+
 
 
 

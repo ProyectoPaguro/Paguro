@@ -7,13 +7,15 @@
   <h2 class="mb-4 text-primary">Inventario de Insumos</h2>
 
   <form method="get" class="mb-3">
-    <select name="categoria" class="form-select w-auto d-inline" onchange="this.form.submit()">
-      <option value="">Todas las categorías</option>
-      {% for c in categorias %}
-        <option value="{{ c.id }}" {% if request.args.get('categoria', type=int) == c.id %}selected{% endif %}>
-          {{ c.nombre }}
-        </option>
-      {% endfor %}
+ <select name="categoria" class="form-select" onchange="this.form.submit()">
+  <option value="">Todas las categorías</option>
+  {% for c in categorias %}
+    <option value="{{ c.id }}" {% if request.args.get('categoria')|int == c.id %}selected{% endif %}>
+      {{ c.nombre }}
+    </option>
+  {% endfor %}
+</select>
+
     </select>
   </form>
 
