@@ -761,7 +761,7 @@ def crear_producto():
 
 @app.route('/producto/<int:producto_id>/editar', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@require_roles('admin')
 def producto_editar(producto_id):
     producto = Producto.query.get_or_404(producto_id)
     categorias = CategoriaProduccion.query.order_by(CategoriaProduccion.nombre.asc()).all()  # ✅ CORREGIDO
