@@ -750,7 +750,7 @@ def crear_producto():
     return render_template('producto_nuevo.html', categorias=categorias)
 
 
-@app.route('/productos/<int:producto_id>/editar', methods=['GET', 'POST'])
+@app.route('/producto/<int:producto_id>/editar', methods=['GET', 'POST'])
 @login_required
 @require_roles('admin')
 def producto_editar(producto_id):
@@ -758,10 +758,10 @@ def producto_editar(producto_id):
     categorias = CategoriaProducto.query.order_by(CategoriaProducto.nombre.asc()).all()
 
     if request.method == 'POST':
-        producto.nombre = request.form.get('nombre').strip()
-        producto.acabado = request.form.get('acabado').strip()
+        producto.nombre = request.form.get('nombre')
+        producto.acabado = request.form.get('acabado')
         producto.cantidad_actual = float(request.form.get('cantidad_actual') or 0)
-        producto.bodega = request.form.get('bodega').strip()
+        producto.bodega = request.form.get('bodega')
 
         categoria_nombre = request.form.get('categoria_nombre')
         categoria_id = request.form.get('categoria_id')
@@ -772,10 +772,8 @@ def producto_editar(producto_id):
             db.session.add(nueva_cat)
             db.session.commit()
             producto.categoria_id = nueva_cat.id
-        elif categoria_id:
-            producto.categoria_id = int(categoria_id)
         else:
-            producto.categoria_id = None
+            producto.categoria_id = int(categoria_id) if categoria_id else None
 
         db.session.commit()
         flash('Producto actualizado ✅', 'success')

@@ -5,46 +5,24 @@
 <h2 class="text-success mb-3">➕ Agregar nuevo producto</h2>
 
 <form action="/productos" method="POST" class="card p-3 shadow-sm">
+
   <label class="form-label">Nombre del producto</label>
-  <input type="text" name="nombre" class="form-control mb-2" required
-         value="{{ nombre|default('') }}">
+  <input type="text" name="nombre" class="form-control mb-2" required value="{{ nombre|default('') }}">
 
   <label class="form-label">Acabado del producto</label>
-  <input type="text" name="acabado" class="form-control mb-2" required
-         value="{{ acabado|default('') }}">
+  <input type="text" name="acabado" class="form-control mb-2" required value="{{ acabado|default('') }}">
 
   <label class="form-label">Cantidad inicial</label>
-  <input type="text" name="cantidad" class="form-control mb-2" required
-         placeholder="Ej: 10 o 10.5"
-         value="{{ cantidad|default('') }}">
+  <input type="text" name="cantidad" class="form-control mb-2" required placeholder="Ej: 10 o 10.5" value="{{ cantidad|default('') }}">
 
   <label class="form-label">Bodega</label>
-  <input type="text" name="bodega" class="form-control mb-3" required
-         value="{{ bodega|default('') }}">
+  <input type="text" name="bodega" class="form-control mb-3" required value="{{ bodega|default('') }}">
 
+  <!-- 🔹 SOLO ESTE BLOQUE DE CATEGORÍAS -->
   <div class="mb-3">
-  <label for="categoria" class="form-label">Categoría existente:</label>
-  <select name="categoria_id" class="form-select">
-    <option value="">(Sin categoría)</option>
-    {% for c in categorias %}
-      <option value="{{ c.id }}">{{ c.nombre }}</option>
-    {% endfor %}
-  </select>
-</div>
-
-<div class="mb-3">
-  <label for="categoria_nombre" class="form-label">O crear nueva categoría:</label>
-  <input type="text" class="form-control" name="categoria_nombre" placeholder="Ej: Fundición, Pulido, Ensamble...">
-</div>
-              
-  <div class="d-flex gap-2">
-    <button type="submit" class="btn btn-success">Guardar</button>
-    <a href="/produccion" class="btn btn-secondary">Volver</a>
-  </div>
-   <div class="mb-3">
-    <label class="form-label">Categoría existente</label>
+    <label for="categoria" class="form-label">Categoría existente:</label>
     <select name="categoria_id" class="form-select">
-      <option value="">Sin categoría</option>
+      <option value="">(Sin categoría)</option>
       {% for c in categorias %}
         <option value="{{ c.id }}">{{ c.nombre }}</option>
       {% endfor %}
@@ -52,11 +30,15 @@
   </div>
 
   <div class="mb-3">
-    <label class="form-label">O crear nueva categoría</label>
-    <input type="text" name="categoria_nombre" class="form-control" placeholder="Ej. Muebles, Adornos, etc.">
+    <label for="categoria_nombre" class="form-label">O crear nueva categoría:</label>
+    <input type="text" class="form-control" name="categoria_nombre" placeholder="Ej: Fundición, Pulido, Ensamble...">
+  </div>
+  <!-- 🔹 FIN BLOQUE -->
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="/produccion" class="btn btn-secondary">Volver</a>
   </div>
 
-  <button type="submit" class="btn btn-primary">Guardar</button>
-  <a href="{{ url_for('produccion') }}" class="btn btn-secondary">Cancelar</a>
 </form>
 {% endblock %}
