@@ -23,7 +23,8 @@ from flask_login import (
     logout_user, current_user
     
 )
-from models import Producto, CategoriaInsumo, CategoriaProducto
+from app import db
+
 
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
