@@ -47,14 +47,22 @@
   <div class="col-md-3 mb-4">
     <div class="card shadow-sm border-0 text-center h-100" style="cursor:pointer;"
          onclick="verProductos({{ id }}, '{{ nombre }}')">
-      <!-- 🔹 Imagen dinámica -->
-      <img 
-        src="{{ url_for('static', filename='img/categorias/' + nombre|lower|replace(' ', '-') + '.jpg') }}"
-        onerror="this.src='{{ url_for('static', filename='img/categorias/default.jpg') }}'"
-        class="card-img-top"
-        alt="{{ nombre }}"
-        style="object-fit: cover; height: 200px; border-top-left-radius: 1rem; border-top-right-radius: 1rem;"
-      >
+   <!-- 🔹 Imagen dinámica -->
+<!-- 🔹 Imagen dinámica con fallback (.png → .jpg → default) -->
+{% set base = 'img/categorias/' + nombre|lower|replace(' ', '-') %}
+<img 
+  src="{{ url_for('static', filename=base + '.png') }}"
+  onerror="this.onerror=null;
+           this.src='{{ url_for('static', filename=base + '.jpg') }}';
+           this.onerror=function(){
+             this.src='{{ url_for('static', filename='img/categorias/default.jpg') }}';
+           };"
+  class="card-img-top"
+  alt="{{ nombre }}"
+  style="object-fit: cover; height: 200px; border-top-left-radius: 1rem; border-top-right-radius: 1rem;"
+>
+
+
 
       <!-- 🔹 Contenido -->
       <div class="card-body">
