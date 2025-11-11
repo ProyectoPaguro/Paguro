@@ -672,7 +672,11 @@ from sqlalchemy import func  # ⚠️ Esta importación va arriba del archivo, j
 @app.route('/productos_por_categoria/<int:categoria_id>/tabla')
 @login_required
 def productos_por_categoria_tabla(categoria_id):
-    productos = Producto.query.filter_by(categoria_id=categoria_id).order_by(Producto.nombre.asc()).all()
+    if categoria_id == 0:  # caso especial "sin categoría"
+        productos = Producto.query.filter(Producto.categoria_id.is_(None)).order_by(Producto.nombre.asc()).all()
+    else:
+        productos = Producto.query.filter_by(categoria_id=categoria_id).order_by(Producto.nombre.asc()).all()
+    
     data = [
         {
             'id': p.id,
@@ -685,6 +689,7 @@ def productos_por_categoria_tabla(categoria_id):
         for p in productos
     ]
     return jsonify(data)
+
 
 
 @app.route('/produccion', endpoint='produccion')
@@ -713,22 +718,31 @@ def produccion():
 
     productos = query.order_by(Producto.nombre.asc()).all()
 
-    # 🔹 Totales por categoría para el dashboard visual
-    totales_categoria = db.session.query(
-        CategoriaProduccion.id,
-        CategoriaProduccion.nombre,
-        func.coalesce(func.sum(Producto.cantidad_actual), 0).label('total')
-    ).outerjoin(Producto).group_by(CategoriaProduccion.id).order_by(CategoriaProduccion.nombre.asc()).all()
+totales_categoria = db.session.query(
+    CategoriaProduccion.id,
+    CategoriaProduccion.nombre,
+    func.coalesce(func.sum(Producto.cantidad_actual), 0).label('total')
+).outerjoin(Producto).group_by(CategoriaProduccion.id).order_by(CategoriaProduccion.nombre.asc()).all()
 
-    # Renderizar plantilla con todo
+# 🔹 Agregar manualmente una categoría virtual para los productos sin categoría
+sin_categoria_total = db.session.query(
+    func.coalesce(func.sum(Producto.cantidad_actual), 0)
+).filter(Producto.categoria_id.is_(None)).scalar()
+
+if sin_categoria_total > 0:
+    totales_categoria.append((0, "Sin categoría", sin_categoria_total))
+
+# 🔹 Renderizar plantilla con todo (fuera del if)
     return render_template(
-        'produccion.html',
-        productos=productos,
-        categorias=categorias,
-        totales_categoria=totales_categoria,  # 👈 no olvides pasarlo aquí
-        q=q,
-        categoria_id=categoria_id
-    )
+    'produccion.html',
+    productos=productos,
+    categorias=categorias,
+    totales_categoria=totales_categoria,  # 👈 importante
+    q=q,
+    categoria_id=categoria_id
+)
+
+
 
 app.add_url_rule(
     '/produccion',
