@@ -769,6 +769,12 @@ def produccion():
     totales_categoria = list(totales_categoria)
     if sin_categoria_total > 0:
         totales_categoria.append((0, "Sin categoría", sin_categoria_total))
+    print("\n=== DEBUG: Totales por categoría ===")
+    for t in totales_categoria:
+        print(f"ID: {t[0]}, Nombre: {t[1]}, Total: {t[2]}")
+
+    print("=== DEBUG: Total sin categoría ===", sin_categoria_total)
+    print("=== DEBUG: Conteo total productos:", Producto.query.count(), "===")
 
     # 🔹 Renderizar vista
     return render_template(
