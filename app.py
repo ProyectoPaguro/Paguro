@@ -666,6 +666,26 @@ def export_movs_insumos():
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 
+from sqlalchemy import func  # ⚠️ Esta importación va arriba del archivo, junto con los demás imports
+
+@app.route('/productos_por_categoria/<int:categoria_id>/tabla')
+@login_required
+def productos_por_categoria_tabla(categoria_id):
+    productos = Producto.query.filter_by(categoria_id=categoria_id).order_by(Producto.nombre.asc()).all()
+    data = [
+        {
+            'id': p.id,
+            'nombre': p.nombre,
+            'acabado': p.acabado,
+            'cantidad': p.cantidad_actual,
+            'bodega': p.bodega,
+            'categoria': p.categoria_producto.nombre if p.categoria_producto else '-'
+        }
+        for p in productos
+    ]
+    return jsonify(data)
+
+
 @app.route('/produccion', endpoint='produccion')
 @login_required
 def produccion():
@@ -675,6 +695,7 @@ def produccion():
     # traer lista de categorías
     categorias = CategoriaProduccion.query.order_by(CategoriaProduccion.nombre.asc()).all()
 
+    # base de productos
     query = Producto.query
     if q:
         like = f"%{q}%"
@@ -690,14 +711,23 @@ def produccion():
         query = query.filter(Producto.categoria_id == categoria_id)
 
     productos = query.order_by(Producto.nombre.asc()).all()
+
+    # 🔹 Totales por categoría para el dashboard visual
+    totales_categoria = db.session.query(
+        CategoriaProduccion.id,
+        CategoriaProduccion.nombre,
+        func.coalesce(func.sum(Producto.cantidad_actual), 0).label('total')
+    ).outerjoin(Producto).group_by(CategoriaProduccion.id).order_by(CategoriaProduccion.nombre.asc()).all()
+
+    # Renderizar plantilla con todo
     return render_template(
         'produccion.html',
         productos=productos,
         categorias=categorias,
+        totales_categoria=totales_categoria,  # 👈 no olvides pasarlo aquí
         q=q,
         categoria_id=categoria_id
     )
-
 
 app.add_url_rule(
     '/produccion',
