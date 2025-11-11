@@ -745,12 +745,13 @@ def produccion():
                 Producto.bodega.ilike(like),
             )
         )
+
     if categoria_id:
         query = query.filter(Producto.categoria_id == categoria_id)
 
     productos = query.order_by(Producto.nombre.asc()).all()
 
-    # 🔹 Totales por categoría (dentro de la función)
+    # 🔹 Totales por categoría (se calcula dentro del contexto de la app)
     totales_categoria = db.session.query(
         CategoriaProduccion.id,
         CategoriaProduccion.nombre,
@@ -763,12 +764,13 @@ def produccion():
     # 🔹 Agregar categoría virtual “Sin categoría”
     sin_categoria_total = db.session.query(
         func.coalesce(func.sum(Producto.cantidad_actual), 0)
-    ).filter(Producto.categoria_id.is_(None)).scalar()
+    ).filter(Producto.categoria_id.is_(None)).scalar() or 0
 
+    totales_categoria = list(totales_categoria)
     if sin_categoria_total > 0:
         totales_categoria.append((0, "Sin categoría", sin_categoria_total))
 
-    # 🔹 Renderizado
+    # 🔹 Renderizar vista
     return render_template(
         'produccion.html',
         productos=productos,
@@ -777,6 +779,7 @@ def produccion():
         q=q,
         categoria_id=categoria_id
     )
+
 
 
 app.add_url_rule(
