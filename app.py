@@ -718,29 +718,31 @@ def produccion():
 
     productos = query.order_by(Producto.nombre.asc()).all()
 
-totales_categoria = db.session.query(
-    CategoriaProduccion.id,
-    CategoriaProduccion.nombre,
-    func.coalesce(func.sum(Producto.cantidad_actual), 0).label('total')
-).outerjoin(Producto).group_by(CategoriaProduccion.id).order_by(CategoriaProduccion.nombre.asc()).all()
+    # 🔹 Totales por categoría para el dashboard visual
+    totales_categoria = db.session.query(
+        CategoriaProduccion.id,
+        CategoriaProduccion.nombre,
+        func.coalesce(func.sum(Producto.cantidad_actual), 0).label('total')
+    ).outerjoin(Producto).group_by(CategoriaProduccion.id).order_by(CategoriaProduccion.nombre.asc()).all()
 
-# 🔹 Agregar manualmente una categoría virtual para los productos sin categoría
-sin_categoria_total = db.session.query(
-    func.coalesce(func.sum(Producto.cantidad_actual), 0)
-).filter(Producto.categoria_id.is_(None)).scalar()
+    # 🔹 Agregar manualmente una categoría virtual para los productos sin categoría
+    sin_categoria_total = db.session.query(
+        func.coalesce(func.sum(Producto.cantidad_actual), 0)
+    ).filter(Producto.categoria_id.is_(None)).scalar()
 
-if sin_categoria_total > 0:
-    totales_categoria.append((0, "Sin categoría", sin_categoria_total))
+    if sin_categoria_total > 0:
+        totales_categoria.append((0, "Sin categoría", sin_categoria_total))
 
-# 🔹 Renderizar plantilla con todo (fuera del if)
+    # ✅ El return debe estar DENTRO de la función, así:
     return render_template(
-    'produccion.html',
-    productos=productos,
-    categorias=categorias,
-    totales_categoria=totales_categoria,  # 👈 importante
-    q=q,
-    categoria_id=categoria_id
-)
+        'produccion.html',
+        productos=productos,
+        categorias=categorias,
+        totales_categoria=totales_categoria,
+        q=q,
+        categoria_id=categoria_id
+    )
+
 
 
 
