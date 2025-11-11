@@ -667,8 +667,6 @@ def export_movs_insumos():
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 
-from sqlalchemy import func  # ⚠️ Esta importación va arriba del archivo, junto con los demás imports
-
 @app.route('/productos_por_categoria/<int:categoria_id>/tabla')
 @login_required
 def productos_por_categoria_tabla(categoria_id):
@@ -731,7 +729,7 @@ def produccion():
     q = (request.args.get('q') or '').strip()
     categoria_id = request.args.get('categoria', type=int)
 
-    # 🔹 Categorías disponibles
+    # 🔹 Traer lista de categorías
     categorias = CategoriaProduccion.query.order_by(CategoriaProduccion.nombre.asc()).all()
 
     # 🔹 Filtro de productos
@@ -751,7 +749,7 @@ def produccion():
 
     productos = query.order_by(Producto.nombre.asc()).all()
 
-    # 🔹 Totales por categoría (se calcula dentro del contexto de la app)
+    # 🔹 AHORA esta parte va aquí dentro (¡importante!)
     totales_categoria = db.session.query(
         CategoriaProduccion.id,
         CategoriaProduccion.nombre,
@@ -761,38 +759,22 @@ def produccion():
      .order_by(CategoriaProduccion.nombre.asc()) \
      .all()
 
-    # 🔹 Agregar categoría virtual “Sin categoría”
+    # 🔹 Agregar manualmente una categoría virtual “Sin categoría”
     sin_categoria_total = db.session.query(
         func.coalesce(func.sum(Producto.cantidad_actual), 0)
-    ).filter(Producto.categoria_id.is_(None)).scalar() or 0
+    ).filter(Producto.categoria_id.is_(None)).scalar()
 
-    totales_categoria = list(totales_categoria)
     if sin_categoria_total > 0:
         totales_categoria.append((0, "Sin categoría", sin_categoria_total))
-    print("\n=== DEBUG: Totales por categoría ===")
-    for t in totales_categoria:
-        print(f"ID: {t[0]}, Nombre: {t[1]}, Total: {t[2]}")
 
-    print("=== DEBUG: Total sin categoría ===", sin_categoria_total)
-    print("=== DEBUG: Conteo total productos:", Producto.query.count(), "===")
-
-    # 🔹 Renderizar vista
+    # 🔹 Renderizar la página
     return render_template(
         'produccion.html',
         productos=productos,
         categorias=categorias,
         totales_categoria=totales_categoria,
-        q=q,
-        categoria_id=categoria_id
+        q=q
     )
-
-
-
-app.add_url_rule(
-    '/produccion',
-    endpoint='produccion_view',
-    view_func=app.view_functions['produccion']  
-)
 
 @app.route('/productos', methods=['GET', 'POST'], endpoint='crear_producto')
 @login_required
@@ -870,7 +852,7 @@ def producto_editar(producto_id):
             db.session.commit()
             producto.categoria_id = nueva_cat.id
         elif categoria_id:
-            producto.categoria_id = categoria_id
+            producto.categoria_id = int (categoria_id)
         else:
             producto.categoria_id = None
 
@@ -1036,10 +1018,6 @@ def movimiento_produccion():
     db.session.commit()
     flash('Movimiento registrado ✅', 'success')
     return redirect(url_for('produccion'))
-
-
-    return render_template('movimiento_produccion.html', productos=productos, bodegas=bodegas)
-
 
 @app.route('/historial-produccion')
 @login_required
