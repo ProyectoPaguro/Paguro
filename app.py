@@ -28,6 +28,7 @@ from sqlalchemy import func, text, or_
 
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
+from flask import Flask, render_template, request, redirect, url_for, send_file, flash, abort, jsonify
 
 
 import os
@@ -668,7 +669,7 @@ def export_movs_insumos():
 
 from sqlalchemy import func  # ⚠️ Esta importación va arriba del archivo, junto con los demás imports
 
-@app.route('/productos_por_categoria/<int:categoria_id>')
+@app.route('/productos_por_categoria/<int:categoria_id>/tabla')
 @login_required
 def productos_por_categoria_tabla(categoria_id):
     productos = Producto.query.filter_by(categoria_id=categoria_id).order_by(Producto.nombre.asc()).all()
