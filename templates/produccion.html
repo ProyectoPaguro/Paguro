@@ -50,18 +50,18 @@
          style="cursor:pointer;"
          onclick="window.location.href='/productos_por_categoria/{{ id }}'">
       
-      <!-- 🔹 Imagen dinámica -->
-      <img 
-        src="{{ url_for('static', filename=base + '.png') }}"
-        onerror="this.onerror=null;
-                 this.src='{{ url_for('static', filename=base + '.jpg') }}';
-                 this.onerror=function(){
-                   this.src='{{ url_for('static', filename='img/categorias/default.jpg') }}';
-                 };"
-        class="card-img-top"
-        alt="{{ nombre }}"
-        style="object-fit: cover; height: 200px; border-top-left-radius: 1rem; border-top-right-radius: 1rem;"
-      >
+{% set base = 'img/categorias/' + nombre|lower|replace(' ', '-') %}
+{% set img_jpg = base + '.jpg' %}
+{% set img_default = 'img/categorias/default.jpg' %}
+
+<img 
+  src="{{ url_for('static', filename=img_jpg) }}"
+  onerror="this.src='{{ url_for('static', filename=img_default) }}'"
+  class="card-img-top"
+  alt="{{ nombre }}"
+  style="object-fit: cover; height: 200px; border-top-left-radius: 1rem; border-top-right-radius: 1rem;"
+>
+
 
       <!-- 🔹 Contenido -->
       <div class="card-body">
