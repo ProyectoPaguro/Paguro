@@ -6,22 +6,22 @@
   <h2 class="mb-3 text-primary text-center">{{ categoria_nombre }}</h2>
   <p class="text-center text-muted">Productos de esta categoría</p>
 
-  <div class="text-center mb-4">
-    {% set base = 'img/categorias/' + categoria_nombre|lower|replace(' ', '-') %}
-    <img 
-      src="{{ url_for('static', filename=base + '.png') }}"
-      onerror="this.onerror=null;
-               this.src='{{ url_for('static', filename=base + '.jpg') }}';
-               this.onerror=function(){
-                 this.src='{{ url_for('static', filename='img/categorias/default.png') }}';
-               };"
-      alt="{{ categoria_nombre }}"
-      class="img-fluid rounded shadow-sm"
-      style="max-height: 300px; object-fit: cover;"
-    >
-  </div>
-
-  {% if productos %}
+<div class="text-center mb-4">
+  {% set base = 'img/categorias/' + categoria_nombre|lower|replace(' ', '-') %}
+  <img 
+    src="{{ url_for('static', filename=base + '.png') }}"
+    onerror="this.onerror=null;
+             this.src='{{ url_for('static', filename=base + '.jpg') }}';
+             this.onerror=function(){
+               this.src='{{ url_for('static', filename='img/categorias/default.png') }}';
+             };"
+    alt="{{ categoria_nombre }}"
+    class="img-fluid rounded shadow-sm"
+    style="max-height: 300px; object-fit: cover;"
+  >
+</div>
+{% if productos %}
+<form method="POST">
   <table class="table table-bordered table-hover align-middle">
     <thead class="table-dark">
       <tr>
@@ -29,6 +29,9 @@
         <th>Acabado</th>
         <th>Cantidad</th>
         <th>Bodega</th>
+        {% if categoria_nombre == "Sin categoría" %}
+        <th>Asignar categoría</th>
+        {% endif %}
       </tr>
     </thead>
     <tbody>
@@ -38,13 +41,29 @@
         <td>{{ p.acabado or '-' }}</td>
         <td>{{ p.cantidad_actual }}</td>
         <td>{{ p.bodega or '-' }}</td>
+        {% if categoria_nombre == "Sin categoría" %}
+        <td>
+          <div class="input-group">
+            <select name="nueva_categoria" class="form-select">
+              <option value="0">Seleccionar...</option>
+              {% for c in categorias %}
+                <option value="{{ c.id }}">{{ c.nombre }}</option>
+              {% endfor %}
+            </select>
+            <input type="hidden" name="producto_id" value="{{ p.id }}">
+            <button class="btn btn-primary btn-sm">Guardar</button>
+          </div>
+        </td>
+        {% endif %}
       </tr>
       {% endfor %}
     </tbody>
   </table>
-  {% else %}
-    <p class="text-muted text-center">No hay productos en esta categoría.</p>
-  {% endif %}
+</form>
+{% else %}
+  <p class="text-muted text-center">No hay productos en esta categoría.</p>
+{% endif %}
+
 
   <div class="text-center mt-3">
     <a href="{{ url_for('produccion') }}" class="btn btn-outline-primary">← Volver a categorías</a>

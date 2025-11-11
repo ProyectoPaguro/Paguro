@@ -690,10 +690,12 @@ def productos_por_categoria_tabla(categoria_id):
     ]
     return jsonify(data)
 
-@app.route('/productos_por_categoria/<int:categoria_id>')
+@app.route('/productos_por_categoria/<int:categoria_id>', methods=['GET', 'POST'])
 @login_required
 def productos_por_categoria_vista(categoria_id):
-    if categoria_id == 0:  # caso especial: productos sin categoría
+    categorias = CategoriaProduccion.query.order_by(CategoriaProduccion.nombre.asc()).all()
+
+    if categoria_id == 0:
         categoria_nombre = "Sin categoría"
         productos = Producto.query.filter(Producto.categoria_id.is_(None)).order_by(Producto.nombre.asc()).all()
     else:
@@ -701,7 +703,24 @@ def productos_por_categoria_vista(categoria_id):
         categoria_nombre = categoria.nombre
         productos = Producto.query.filter_by(categoria_id=categoria_id).order_by(Producto.nombre.asc()).all()
 
-    return render_template('productos_por_categoria.html', categoria_nombre=categoria_nombre, productos=productos)
+    # Si se envió un cambio de categoría
+    if request.method == 'POST':
+        producto_id = request.form.get('producto_id')
+        nueva_categoria = request.form.get('nueva_categoria')
+        if producto_id and nueva_categoria:
+            producto = Producto.query.get(producto_id)
+            producto.categoria_id = int(nueva_categoria) if nueva_categoria != "0" else None
+            db.session.commit()
+            flash('Categoría actualizada correctamente', 'success')
+            return redirect(request.url)
+
+    return render_template(
+        'productos_por_categoria.html',
+        categoria_nombre=categoria_nombre,
+        productos=productos,
+        categorias=categorias,
+        categoria_id=categoria_id
+    )
 
 
 @app.route('/produccion', endpoint='produccion')
