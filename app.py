@@ -692,6 +692,7 @@ def productos_por_categoria_tabla(categoria_id):
     return jsonify(data)
 
 
+
 @app.route('/productos_por_categoria/<int:categoria_id>', methods=['GET', 'POST'])
 @login_required
 def productos_por_categoria_vista(categoria_id):
