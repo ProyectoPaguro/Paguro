@@ -753,13 +753,14 @@ def produccion():
     totales_categoria = db.session.query(
         CategoriaProduccion.id,
         CategoriaProduccion.nombre,
-        func.coalesce(func.sum(Producto.cantidad_actual), 0).label('total')
+        func.count(Producto.id).label('total')
     ).outerjoin(Producto).group_by(CategoriaProduccion.id).order_by(CategoriaProduccion.nombre.asc()).all()
 
     # 🔹 Agregar manualmente una categoría virtual para los productos sin categoría
     sin_categoria_total = db.session.query(
-        func.coalesce(func.sum(Producto.cantidad_actual), 0)
-    ).filter(Producto.categoria_id.is_(None)).scalar()
+    func.count(Producto.id)
+).filter(Producto.categoria_id.is_(None)).scalar()
+
 
     if sin_categoria_total > 0:
         totales_categoria.append((0, "Sin categoría", sin_categoria_total))
