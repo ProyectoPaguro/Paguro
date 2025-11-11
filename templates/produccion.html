@@ -41,142 +41,82 @@
   </form>
 
   <!-- 🔹 PANEL VISUAL DE CATEGORÍAS -->
-  <h4 class="mt-4 mb-3 text-center">Inventario por Categorías</h4>
-  <div class="row">
-    {% for id, nombre, total in totales_categoria %}
-    <div class="col-md-3 mb-4">
-      <div class="card shadow-sm border-0 text-center h-100" style="cursor:pointer;"
-           onclick="verProductos({{ id }}, '{{ nombre }}')">
-        <img src="{{ url_for('static', filename='img/categorias/' + nombre|lower + '.jpg') }}"
-             class="card-img-top" alt="{{ nombre }}">
-        <div class="card-body">
-          <h5 class="card-title">{{ nombre }}</h5>
-          <p class="text-muted mb-0">Total: <strong>{{ total }}</strong></p>
-        </div>
+<h4 class="mt-4 mb-3 text-center">Categorías de Producción</h4>
+<div class="row" id="categoriasContainer">
+  {% for id, nombre, total in totales_categoria %}
+  <div class="col-md-3 mb-4">
+    <div class="card shadow-sm border-0 text-center h-100 categoria-card"
+         id="cat-{{ id }}" onclick="mostrarProductos({{ id }}, '{{ nombre }}')"
+         style="cursor:pointer;">
+      <img src="{{ url_for('static', filename='img/categorias/' + nombre|lower + '.jpg') }}"
+           class="card-img-top" alt="{{ nombre }}">
+      <div class="card-body">
+        <h5 class="card-title">{{ nombre }}</h5>
+        <p class="text-muted mb-0">Total: <strong>{{ total }}</strong></p>
       </div>
-    </div>
-    {% endfor %}
-  </div>
-  <!-- 🔹 FIN PANEL -->
 
-  <!-- Tabla -->
-  <table class="table table-bordered table-striped shadow-sm align-middle">
-    <thead class="table-dark">
-      <tr>
-        <th>Nombre</th>
-        <th>Acabado</th>
-        <th class="text-end">Cantidad</th>
-        <th>Bodega</th>
-        <th>Categoría</th>
-        {% if current_user.rol == 'admin' %}
-          <th>Acciones</th>
-        {% endif %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for p in productos %}
-      <tr>
-        <td>{{ p.nombre }}</td>
-        <td>{{ p.acabado }}</td>
-        <td class="text-end">{{ p.cantidad_actual }}</td>
-        <td>{{ p.bodega }}</td>
-        <td>{{ p.categoria_producto.nombre if p.categoria_producto else '-' }}</td>
-        {% if current_user.rol == 'admin' %}
-        <td class="d-flex gap-1">
-          <a href="{{ url_for('producto_editar', producto_id=p.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
-          <form action="{{ url_for('producto_eliminar', producto_id=p.id) }}" method="POST"
-                onsubmit="return confirm('¿Eliminar {{ p.nombre }}?');">
-            <button class="btn btn-sm btn-outline-danger">Eliminar</button>
-          </form>
-        </td>
-        {% endif %}
-      </tr>
-      {% else %}
-      <tr><td colspan="6" class="text-center text-muted">No hay productos registrados</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-<!-- Modal para mostrar productos de una categoría -->
-<div class="modal fade" id="modalProductos" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalTitulo"></h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <table class="table table-striped text-center">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Acabado</th>
-              <th>Cantidad</th>
-            </tr>
-          </thead>
-          <tbody id="tablaProductos"></tbody>
-        </table>
-      </div>
+      <!-- Aquí aparecerá la lista dinámica -->
+      <div class="productos-lista mt-2" style="display:none;"></div>
     </div>
   </div>
+  {% endfor %}
 </div>
 
+<style>
+.categoria-card:hover {
+  transform: scale(1.02);
+  transition: all 0.2s;
+  box-shadow: 0 0 10px rgba(0,0,0,0.15);
+}
+.categoria-card .productos-lista {
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 8px;
+}
+</style>
+
 <script>
-  async function verProductos(categoriaId, categoriaNombre) {
-    const response = await fetch(`/productos_por_categoria/${categoriaId}`);
-    const data = await response.json();
-
-    const tabla = document.getElementById('tablaProductos');
-    tabla.innerHTML = '';
-    data.forEach(p => {
-      tabla.innerHTML += `
-        <tr>
-          <td>${p.nombre}</td>
-          <td>${p.acabado || '-'}</td>
-          <td>${p.cantidad}</td>
-        </tr>
-      `;
-    });
-
-    document.getElementById('modalTitulo').textContent = categoriaNombre;
-    new bootstrap.Modal(document.getElementById('modalProductos')).show();
+async function mostrarProductos(categoriaId, categoriaNombre) {
+  const card = document.getElementById(`cat-${categoriaId}`);
+  const listaDiv = card.querySelector('.productos-lista');
+  
+  // Si ya está visible, la ocultamos (abrir/cerrar)
+  if (listaDiv.style.display === 'block') {
+    listaDiv.style.display = 'none';
+    listaDiv.innerHTML = '';
+    return;
   }
-</script>
-<script>
-  async function verProductos(categoriaId, categoriaNombre) {
-    const response = await fetch(`/productos_por_categoria/${categoriaId}/tabla`);
-    const data = await response.json();
 
-    // Actualizar título
-    document.querySelector('.mb-4.text-primary').textContent = `Producción – ${categoriaNombre}`;
+  // Oculta las otras listas abiertas
+  document.querySelectorAll('.productos-lista').forEach(el => {
+    el.style.display = 'none';
+    el.innerHTML = '';
+  });
 
-    // Reemplazar el contenido de la tabla
-    const tbody = document.querySelector('table tbody');
-    tbody.innerHTML = '';
+  const response = await fetch(`/productos_por_categoria/${categoriaId}/tabla`);
+  const productos = await response.json();
 
-    if (data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">
-                          No hay productos en esta categoría
-                         </td></tr>`;
-      return;
-    }
-
-    data.forEach(p => {
-      tbody.innerHTML += `
-        <tr>
-          <td>${p.nombre}</td>
-          <td>${p.acabado || '-'}</td>
-          <td class="text-end">${p.cantidad}</td>
-          <td>${p.bodega || '-'}</td>
-          <td>${p.categoria}</td>
-          <td class="d-flex gap-1">
-            <a href="/producto/${p.id}/editar" class="btn btn-sm btn-outline-primary">Editar</a>
-          </td>
-        </tr>
-      `;
+  if (productos.length === 0) {
+    listaDiv.innerHTML = `<p class="text-muted">No hay productos registrados en esta categoría.</p>`;
+  } else {
+    let html = `<table class="table table-sm table-bordered mt-2">
+      <thead class="table-light">
+        <tr><th>Nombre</th><th>Acabado</th><th>Cantidad</th><th>Bodega</th></tr></thead><tbody>`;
+    productos.forEach(p => {
+      html += `<tr>
+        <td>${p.nombre}</td>
+        <td>${p.acabado || '-'}</td>
+        <td>${p.cantidad}</td>
+        <td>${p.bodega || '-'}</td>
+      </tr>`;
     });
+    html += `</tbody></table>`;
+    listaDiv.innerHTML = html;
   }
+
+  listaDiv.style.display = 'block';
+}
 </script>
+
 
 {% endblock %}
