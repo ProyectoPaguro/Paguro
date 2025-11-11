@@ -750,22 +750,59 @@ def produccion():
     productos = query.order_by(Producto.nombre.asc()).all()
 
     # 🔹 AHORA esta parte va aquí dentro (¡importante!)
-    totales_categoria = db.session.query(
-        CategoriaProduccion.id,
-        CategoriaProduccion.nombre,
-        func.coalesce(func.sum(Producto.cantidad_actual), 0).label('total')
-    ).outerjoin(Producto, CategoriaProduccion.id == Producto.categoria_id) \
-     .group_by(CategoriaProduccion.id, CategoriaProduccion.nombre) \
-     .order_by(CategoriaProduccion.nombre.asc()) \
-     .all()
+# 🔹 Cálculo seguro de totales por categoría
+@app.route('/produccion', endpoint='produccion')
+@login_required
+def produccion():
+    q = (request.args.get('q') or '').strip()
+    categoria_id = request.args.get('categoria', type=int)
 
-    # 🔹 Agregar manualmente una categoría virtual “Sin categoría”
-    sin_categoria_total = db.session.query(
-        func.coalesce(func.sum(Producto.cantidad_actual), 0)
-    ).filter(Producto.categoria_id.is_(None)).scalar()
+    # 🔹 Traer lista de categorías
+    categorias = CategoriaProduccion.query.order_by(CategoriaProduccion.nombre.asc()).all()
+
+    # 🔹 Filtro de productos
+    query = Producto.query
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            or_(
+                Producto.nombre.ilike(like),
+                Producto.acabado.ilike(like),
+                Producto.bodega.ilike(like),
+            )
+        )
+
+    if categoria_id:
+        query = query.filter(Producto.categoria_id == categoria_id)
+
+    productos = query.order_by(Producto.nombre.asc()).all()
+
+    # 🔹 Cálculo seguro de totales por categoría
+    totales_categoria = (
+        db.session.query(
+            CategoriaProduccion.id,
+            CategoriaProduccion.nombre,
+            func.coalesce(func.sum(Producto.cantidad_actual), 0).label('total')
+        )
+        .select_from(CategoriaProduccion)
+        .outerjoin(Producto, CategoriaProduccion.id == Producto.categoria_id)
+        .group_by(CategoriaProduccion.id)
+        .order_by(CategoriaProduccion.nombre.asc())
+        .all()
+    )
+
+    # 🔹 Agregar manualmente “Sin categoría”
+    sin_categoria_total = (
+        db.session.query(func.coalesce(func.sum(Producto.cantidad_actual), 0))
+        .filter(Producto.categoria_id.is_(None))
+        .scalar()
+    )
 
     if sin_categoria_total > 0:
         totales_categoria.append((0, "Sin categoría", sin_categoria_total))
+
+    # 🔹 Refrescar sesión por si hay caché
+    db.session.expire_all()
 
     # 🔹 Renderizar la página
     return render_template(
@@ -775,6 +812,7 @@ def produccion():
         totales_categoria=totales_categoria,
         q=q
     )
+
 
 @app.route('/productos', methods=['GET', 'POST'], endpoint='crear_producto')
 @login_required
