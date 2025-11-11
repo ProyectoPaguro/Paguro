@@ -690,6 +690,18 @@ def productos_por_categoria_tabla(categoria_id):
     ]
     return jsonify(data)
 
+@app.route('/productos_por_categoria/<int:categoria_id>')
+@login_required
+def productos_por_categoria_vista(categoria_id):
+    if categoria_id == 0:  # caso especial: productos sin categoría
+        categoria_nombre = "Sin categoría"
+        productos = Producto.query.filter(Producto.categoria_id.is_(None)).order_by(Producto.nombre.asc()).all()
+    else:
+        categoria = CategoriaProduccion.query.get_or_404(categoria_id)
+        categoria_nombre = categoria.nombre
+        productos = Producto.query.filter_by(categoria_id=categoria_id).order_by(Producto.nombre.asc()).all()
+
+    return render_template('productos_por_categoria.html', categoria_nombre=categoria_nombre, productos=productos)
 
 
 @app.route('/produccion', endpoint='produccion')

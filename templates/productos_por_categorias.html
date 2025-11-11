@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block titulo %}{{ categoria_nombre }}{% endblock %}
+
+{% block contenido %}
+<div class="container mt-4">
+  <h2 class="mb-3 text-primary text-center">{{ categoria_nombre }}</h2>
+  <p class="text-center text-muted">Productos de esta categoría</p>
+
+  <div class="text-center mb-4">
+    {% set base = 'img/categorias/' + categoria_nombre|lower|replace(' ', '-') %}
+    <img 
+      src="{{ url_for('static', filename=base + '.png') }}"
+      onerror="this.onerror=null;
+               this.src='{{ url_for('static', filename=base + '.jpg') }}';
+               this.onerror=function(){
+                 this.src='{{ url_for('static', filename='img/categorias/default.png') }}';
+               };"
+      alt="{{ categoria_nombre }}"
+      class="img-fluid rounded shadow-sm"
+      style="max-height: 300px; object-fit: cover;"
+    >
+  </div>
+
+  {% if productos %}
+  <table class="table table-bordered table-hover align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Nombre</th>
+        <th>Acabado</th>
+        <th>Cantidad</th>
+        <th>Bodega</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in productos %}
+      <tr>
+        <td>{{ p.nombre }}</td>
+        <td>{{ p.acabado or '-' }}</td>
+        <td>{{ p.cantidad_actual }}</td>
+        <td>{{ p.bodega or '-' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="text-muted text-center">No hay productos en esta categoría.</p>
+  {% endif %}
+
+  <div class="text-center mt-3">
+    <a href="{{ url_for('produccion') }}" class="btn btn-outline-primary">← Volver a categorías</a>
+  </div>
+</div>
+{% endblock %}
