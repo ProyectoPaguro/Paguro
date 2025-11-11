@@ -686,7 +686,7 @@ def productos_por_categoria_tabla(categoria_id):
             'bodega': p.bodega,
             'categoria': p.categoria_producto.nombre if p.categoria_producto else '-'
         }
-        for p in productos
+        for p @in productos
     ]
     return jsonify(data)
 
@@ -723,7 +723,7 @@ def productos_por_categoria_vista(categoria_id):
     )
 
 
-@app.route('/produccion', endpoint='produccion')
+app.route('/produccion', endpoint='produccion')
 @login_required
 def produccion():
     q = (request.args.get('q') or '').strip()
@@ -749,31 +749,24 @@ def produccion():
 
     productos = query.order_by(Producto.nombre.asc()).all()
 
-    # 🔹 Totales por categoría para el dashboard visual
-    totales_categoria = db.session.query(
-        CategoriaProduccion.id,
-        CategoriaProduccion.nombre,
-        func.count(Producto.id).label('total')
-    ).outerjoin(Producto).group_by(CategoriaProduccion.id).order_by(CategoriaProduccion.nombre.asc()).all()
+ # 🔹 Totales por categoría (suma real de cantidades por categoría)
+totales_categoria = db.session.query(
+    CategoriaProduccion.id,
+    CategoriaProduccion.nombre,
+    func.coalesce(func.sum(Producto.cantidad_actual), 0).label('total')
+).outerjoin(Producto, CategoriaProduccion.id == Producto.categoria_id) \
+ .group_by(CategoriaProduccion.id, CategoriaProduccion.nombre) \
+ .order_by(CategoriaProduccion.nombre.asc()) \
+ .all()
 
-    # 🔹 Agregar manualmente una categoría virtual para los productos sin categoría
-    sin_categoria_total = db.session.query(
-    func.count(Producto.id)
+# 🔹 Agregar manualmente una categoría virtual “Sin categoría”
+sin_categoria_total = db.session.query(
+    func.coalesce(func.sum(Producto.cantidad_actual), 0)
 ).filter(Producto.categoria_id.is_(None)).scalar()
 
+if sin_categoria_total > 0:
+    totales_categoria.append((0, "Sin categoría", sin_categoria_total))
 
-    if sin_categoria_total > 0:
-        totales_categoria.append((0, "Sin categoría", sin_categoria_total))
-
-    # ✅ El return debe estar DENTRO de la función, así:
-    return render_template(
-        'produccion.html',
-        productos=productos,
-        categorias=categorias,
-        totales_categoria=totales_categoria,
-        q=q,
-        categoria_id=categoria_id
-    )
 
 
 
