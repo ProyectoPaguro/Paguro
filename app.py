@@ -686,7 +686,8 @@ def productos_por_categoria_tabla(categoria_id):
             'bodega': p.bodega,
             'categoria': p.categoria_producto.nombre if p.categoria_producto else '-'
         }
-        for p @in productos
+        for p in productos:
+
     ]
     return jsonify(data)
 
