@@ -7,7 +7,7 @@
 
   <!-- 🔹 Encabezado con botón de nuevo producto -->
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="text-secondary mb-0">Categorías de Producción</h4>
+    <h4 class="text-secondary mb-0">Categorías de Producctos</h4>
 
     {% if current_user.is_authenticated and current_user.rol == 'admin' %}
       <a href="{{ url_for('crear_producto') }}" class="btn btn-success">Nuevo producto</a>
