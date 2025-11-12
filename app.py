@@ -1200,13 +1200,21 @@ def categorias():
     categorias = CategoriaInsumo.query.order_by(CategoriaInsumo.nombre.asc()).all()
     return render_template('categorias.html', categorias=categorias)
 
+
+
 from flask import send_file
+import os
 
 @app.route('/descargar_bd')
 @login_required
 @require_roles('admin')
 def descargar_bd():
-    return send_file('database.db', as_attachment=True, download_name='database.db')
+    db_path = "/opt/render/project/src/database.db"  # ruta absoluta dentro del contenedor Render
+    if os.path.exists(db_path):
+        return send_file(db_path, as_attachment=True, download_name='database.db')
+    else:
+        return "No se encontró la base de datos en el servidor.", 404
+
 
 
 if __name__ == '__main__':
