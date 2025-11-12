@@ -1206,15 +1206,11 @@ import os
 @login_required
 @require_roles('admin')
 def descargar_bd():
-    # Ruta absoluta dentro del contenedor Render
-    db_path = "/opt/render/project/src/database.db"
-    
+    db_path = "/var/data/database.db"  # Ruta real del archivo activo en Render
     if os.path.exists(db_path):
         return send_file(db_path, as_attachment=True, download_name='database.db')
     else:
         return "No se encontró la base de datos en el servidor.", 404
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
