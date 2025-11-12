@@ -795,12 +795,8 @@ def produccion_categoria(id_categoria):
         (Producto.nombre.ilike(f'%{search}%')) | (Producto.acabado.ilike(f'%{search}%'))
     ).all()
 
-    return render_template(
-        'produccion_categoria.html',
-        categoria=categoria,
-        productos=productos,
-        search=search
-    )
+    return render_template('productos_por_categoria.html', categoria=categoria, productos=productos, search=search)
+
 
 
 @app.route('/productos', methods=['GET', 'POST'], endpoint='crear_producto')
