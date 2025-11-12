@@ -34,7 +34,7 @@
           <th>Asignar categoría</th>
         {% endif %}
 
-        {% if current_user.has_role('admin') %}
+        {% if current_user.rol == 'admin' %}
           <th>Acciones</th>  <!-- #️⃣ Nueva columna -->
         {% endif %}
       </tr>
@@ -65,7 +65,7 @@
           </td>
         {% endif %}
 
-        {% if current_user.has_role('admin') %}
+        {% if current_user.rol == 'admin' %}
           <td>
             <!-- #️⃣ Botón Editar -->
             <a href="{{ url_for('producto_editar', producto_id=p.id) }}" class="btn btn-sm btn-warning">
