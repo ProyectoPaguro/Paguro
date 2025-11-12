@@ -29,38 +29,60 @@
         <th>Acabado</th>
         <th>Cantidad</th>
         <th>Bodega</th>
+
         {% if categoria_nombre == "Sin categoría" %}
-        <th>Asignar categoría</th>
+          <th>Asignar categoría</th>
+        {% endif %}
+
+        {% if current_user.has_role('admin') %}
+          <th>Acciones</th>  <!-- #️⃣ Nueva columna -->
         {% endif %}
       </tr>
     </thead>
+
     <tbody>
- {% for p in productos %}
-<tr>
-  <td>{{ p.nombre }}</td>
-  <td>{{ p.acabado or '-' }}</td>
-  <td>{{ p.cantidad_actual }}</td>
-  <td>{{ p.bodega or '-' }}</td>
+    {% for p in productos %}
+      <tr>
+        <td>{{ p.nombre }}</td>
+        <td>{{ p.acabado or '-' }}</td>
+        <td>{{ p.cantidad_actual }}</td>
+        <td>{{ p.bodega or '-' }}</td>
 
-  {% if categoria_nombre == "Sin categoría" %}
-  <td>
-    <form method="POST" style="display:inline;">
-      <div class="input-group">
-        <select name="nueva_categoria" class="form-select">
-          <option value="0">Seleccionar...</option>
-          {% for c in categorias %}
-            <option value="{{ c.id }}">{{ c.nombre }}</option>
-          {% endfor %}
-        </select>
-        <input type="hidden" name="producto_id" value="{{ p.id }}">
-        <button class="btn btn-primary btn-sm" type="submit">Guardar</button>
-      </div>
-    </form>
-  </td>
-  {% endif %}
-</tr>
-{% endfor %}
+        {% if categoria_nombre == "Sin categoría" %}
+          <td>
+            <form method="POST" style="display:inline;">
+              <div class="input-group">
+                <select name="nueva_categoria" class="form-select">
+                  <option value="0">Seleccionar...</option>
+                  {% for c in categorias %}
+                    <option value="{{ c.id }}">{{ c.nombre }}</option>
+                  {% endfor %}
+                </select>
+                <input type="hidden" name="producto_id" value="{{ p.id }}">
+                <button class="btn btn-primary btn-sm" type="submit">Guardar</button>
+              </div>
+            </form>
+          </td>
+        {% endif %}
 
+        {% if current_user.has_role('admin') %}
+          <td>
+            <!-- #️⃣ Botón Editar -->
+            <a href="{{ url_for('producto_editar', producto_id=p.id) }}" class="btn btn-sm btn-warning">
+              <i class="bi bi-pencil-square"></i> Editar
+            </a>
+
+            <!-- #️⃣ Botón Eliminar -->
+            <form action="{{ url_for('producto_eliminar', producto_id=p.id) }}" method="POST" style="display:inline;">
+              <button type="submit" class="btn btn-sm btn-danger"
+                      onclick="return confirm('¿Seguro que deseas eliminar este producto? 🗑️')">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        {% endif %}
+      </tr>
+    {% endfor %}
     </tbody>
   </table>
 </form>
@@ -68,9 +90,8 @@
   <p class="text-muted text-center">No hay productos en esta categoría.</p>
 {% endif %}
 
-
-  <div class="text-center mt-3">
-    <a href="{{ url_for('produccion') }}" class="btn btn-outline-primary">← Volver a categorías</a>
-  </div>
+<div class="text-center mt-3">
+  <a href="{{ url_for('produccion') }}" class="btn btn-outline-primary">← Volver a categorías</a>
 </div>
+
 {% endblock %}
