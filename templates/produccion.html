@@ -5,131 +5,54 @@
 <div class="container mt-4">
   <h2 class="mb-4 text-primary">Producción</h2>
 
-  <!-- Buscador -->
-  <form class="row g-2 align-items-center mb-3" method="get" action="{{ url_for('produccion') }}">
-    <div class="col-sm-6 col-md-4">
-      <input
-        type="search"
-        name="q"
-        class="form-control"
-        placeholder="Buscar por nombre, acabado o bodega…"
-        value="{{ q or '' }}"
-      >
-    </div>
-
-    <div class="col-sm-3 col-md-2">
-      <select name="categoria" class="form-select" onchange="this.form.submit()">
-        <option value="">Todas las categorías</option>
-        {% for c in categorias %}
-          <option value="{{ c.id }}" {% if request.args.get('categoria')|int == c.id %}selected{% endif %}>
-            {{ c.nombre }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="col-auto">
-      <button class="btn btn-primary">Buscar</button>
-      <a class="btn btn-outline-secondary" href="{{ url_for('produccion') }}">Limpiar</a>
-    </div>
+  <!-- 🔹 Encabezado con botón de nuevo producto -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="text-secondary mb-0">Categorías de Producción</h4>
 
     {% if current_user.is_authenticated and current_user.rol == 'admin' %}
-    <div class="col-auto ms-auto">
       <a href="{{ url_for('crear_producto') }}" class="btn btn-success">Nuevo producto</a>
-    </div>
     {% endif %}
-  </form>
+  </div>
 
-<!-- 🔹 PANEL VISUAL DE CATEGORÍAS -->
-<h4 class="mt-4 mb-3 text-center">Categorías de Producción</h4>
-<div class="row">
-  {% for id, nombre, total in totales_categoria %}
-  {% set base = 'img/categorias/' + nombre|lower|replace(' ', '-') %}
-  <div class="col-md-3 mb-4">
-    <div id="cat-{{ id }}" class="card shadow-sm border-0 text-center h-100"
-         style="cursor:pointer;"
-         onclick="window.location.href='/productos_por_categoria/{{ id }}'">
-      
-{% set base = 'img/categorias/' + nombre|lower|replace(' ', '-') %}
-{% set img_jpg = base + '.jpg' %}
-{% set img_default = 'img/categorias/default.jpg' %}
+  <!-- 🔹 PANEL VISUAL DE CATEGORÍAS -->
+  <div class="row">
+    {% for id, nombre, total in totales_categoria %}
+    {% set base = 'img/categorias/' + nombre|lower|replace(' ', '-') %}
+    <div class="col-md-3 mb-4">
+      <div id="cat-{{ id }}" class="card shadow-sm border-0 text-center h-100 categoria-card"
+           style="cursor:pointer;"
+           onclick="window.location.href='{{ url_for('produccion_categoria', id_categoria=id) }}'">
 
-<img 
-  src="{{ url_for('static', filename=img_jpg) }}"
-  onerror="this.src='{{ url_for('static', filename=img_default) }}'"
-  class="card-img-top"
-  alt="{{ nombre }}"
-  style="object-fit: cover; height: 200px; border-top-left-radius: 1rem; border-top-right-radius: 1rem;"
->
+        {% set base = 'img/categorias/' + nombre|lower|replace(' ', '-') %}
+        {% set img_jpg = base + '.jpg' %}
+        {% set img_default = 'img/categorias/default.jpg' %}
 
+        <img 
+          src="{{ url_for('static', filename=img_jpg) }}"
+          onerror="this.src='{{ url_for('static', filename=img_default) }}'"
+          class="card-img-top"
+          alt="{{ nombre }}"
+          style="object-fit: cover; height: 200px; border-top-left-radius: 1rem; border-top-right-radius: 1rem;"
+        >
 
-      <!-- 🔹 Contenido -->
-      <div class="card-body">
-        <h5 class="card-title">{{ nombre }}</h5>
-        <p class="text-muted mb-0">Total: <strong>{{ total }}</strong></p>
+        <!-- 🔹 Contenido -->
+        <div class="card-body">
+          <h5 class="card-title">{{ nombre }}</h5>
+          <p class="text-muted mb-0">Total: <strong>{{ total }}</strong></p>
+        </div>
       </div>
     </div>
+    {% endfor %}
   </div>
-  {% endfor %}
 </div>
 
-
-
+<!-- 🔹 Estilos -->
 <style>
 .categoria-card:hover {
   transform: scale(1.02);
   transition: all 0.2s;
   box-shadow: 0 0 10px rgba(0,0,0,0.15);
 }
-.categoria-card .productos-lista {
-  background: #f9f9f9;
-  border-radius: 8px;
-  padding: 8px;
-}
 </style>
-
-<script>
-async function mostrarProductos(categoriaId, categoriaNombre) {
-  const card = document.getElementById(`cat-${categoriaId}`);
-  const listaDiv = card.querySelector('.productos-lista');
-  
-  // Si ya está visible, la ocultamos (abrir/cerrar)
-  if (listaDiv.style.display === 'block') {
-    listaDiv.style.display = 'none';
-    listaDiv.innerHTML = '';
-    return;
-  }
-
-  // Oculta las otras listas abiertas
-  document.querySelectorAll('.productos-lista').forEach(el => {
-    el.style.display = 'none';
-    el.innerHTML = '';
-  });
-
-  const response = await fetch(`/productos_por_categoria/${categoriaId}/tabla`);
-  const productos = await response.json();
-
-  if (productos.length === 0) {
-    listaDiv.innerHTML = `<p class="text-muted">No hay productos registrados en esta categoría.</p>`;
-  } else {
-    let html = `<table class="table table-sm table-bordered mt-2">
-      <thead class="table-light">
-        <tr><th>Nombre</th><th>Acabado</th><th>Cantidad</th><th>Bodega</th></tr></thead><tbody>`;
-    productos.forEach(p => {
-      html += `<tr>
-        <td>${p.nombre}</td>
-        <td>${p.acabado || '-'}</td>
-        <td>${p.cantidad}</td>
-        <td>${p.bodega || '-'}</td>
-      </tr>`;
-    });
-    html += `</tbody></table>`;
-    listaDiv.innerHTML = html;
-  }
-
-  listaDiv.style.display = 'block';
-}
-</script>
-
 
 {% endblock %}

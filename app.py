@@ -784,6 +784,21 @@ def produccion():
         totales_categoria=totales_categoria,
         q=q
     )
+@app.route('/produccion/<int:id_categoria>')
+def produccion_categoria(id_categoria):
+    categoria = Categoria.query.get_or_404(id_categoria)
+    search = request.args.get('search', '')
+
+    # Filtrar productos de esa categoría
+    productos = Producto.query.filter(
+        Producto.categoria_id == id_categoria,
+        (Producto.nombre.ilike(f'%{search}%')) | (Producto.acabado.ilike(f'%{search}%'))
+    ).all()
+
+    return render_template('produccion_categoria.html',
+                           categoria=categoria,
+                           productos=productos,
+                           search=search)
 
 
 @app.route('/productos', methods=['GET', 'POST'], endpoint='crear_producto')
