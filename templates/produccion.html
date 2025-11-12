@@ -18,12 +18,14 @@
   <div class="row">
     {% for id, nombre, total in totales_categoria %}
     {% set base = 'img/categorias/' + nombre|lower|replace(' ', '-') %}
+
     <div class="col-md-3 mb-4">
       <div id="cat-{{ id }}" class="card shadow-sm border-0 text-center h-100 categoria-card"
            style="cursor:pointer;"
            onclick="window.location.href='{{ url_for('produccion_categoria', id_categoria=id) }}'">
 
         {% set base = 'img/categorias/' + nombre|lower|replace(' ', '-') %}
+
         {% set img_jpg = base + '.jpg' %}
         {% set img_default = 'img/categorias/default.jpg' %}
 
