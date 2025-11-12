@@ -1199,9 +1199,6 @@ def categorias():
 
     categorias = CategoriaInsumo.query.order_by(CategoriaInsumo.nombre.asc()).all()
     return render_template('categorias.html', categorias=categorias)
-
-
-
 from flask import send_file
 import os
 
@@ -1209,7 +1206,9 @@ import os
 @login_required
 @require_roles('admin')
 def descargar_bd():
-    db_path = "/opt/render/project/src/database.db"  # ruta absoluta dentro del contenedor Render
+    # Ruta absoluta dentro del contenedor Render
+    db_path = "/opt/render/project/src/database.db"
+    
     if os.path.exists(db_path):
         return send_file(db_path, as_attachment=True, download_name='database.db')
     else:
