@@ -1200,6 +1200,14 @@ def categorias():
     categorias = CategoriaInsumo.query.order_by(CategoriaInsumo.nombre.asc()).all()
     return render_template('categorias.html', categorias=categorias)
 
+from flask import send_file
+
+@app.route('/descargar_bd')
+@login_required
+@require_roles('admin')
+def descargar_bd():
+    return send_file('database.db', as_attachment=True, download_name='database.db')
+
 
 if __name__ == '__main__':
     app.run(debug=True)
