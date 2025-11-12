@@ -5,6 +5,7 @@
 <h2 class="text-primary mb-3">✏️ Editar producto</h2>
 
 <form method="POST" class="card p-3 shadow-sm">
+
   <label class="form-label">Nombre</label>
   <input type="text" name="nombre" value="{{ producto.nombre }}" class="form-control mb-2" required>
 
@@ -17,22 +18,26 @@
   <label class="form-label">Bodega</label>
   <input type="text" name="bodega" value="{{ producto.bodega }}" class="form-control mb-3" required>
 
-  <div class="mb-3">
-  <label class="form-label">Categoría existente</label>
-  <select name="categoria_id" class="form-select">
-    <option value="">Sin categoría</option>
-    {% for c in categorias %}
-      <option value="{{ c.id }}" {% if producto.categoria_id == c.id %}selected{% endif %}>
-        {{ c.nombre }}
-      </option>
-    {% endfor %}
-  </select>
-</div>
+  {% if current_user.rol == 'admin' %}
+  <div class="border rounded p-3 bg-light mb-3">
+    <h5 class="text-secondary mb-2">⚙️ Ajustes de categoría (solo admin)</h5>
 
-<div class="mb-3">
-  <label class="form-label">O crear nueva categoría</label>
-  <input type="text" name="categoria_nombre" class="form-control" placeholder="Ej. Bases, Materas, Portavasos...">
-</div>
+    <label class="form-label">Categoría existente</label>
+    <select name="categoria_id" class="form-select mb-2">
+      <option value="">Sin categoría</option>
+      {% for c in categorias %}
+        <option value="{{ c.id }}" {% if producto.categoria_id == c.id %}selected{% endif %}>
+          {{ c.nombre }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <label class="form-label">O crear nueva categoría</label>
+    <input type="text" name="categoria_nombre" class="form-control" placeholder="Ej. Bases, Materas, Portavasos...">
+  </div>
+  {% else %}
+    <p class="text-muted">🔒 No tienes permisos para cambiar la categoría.</p>
+  {% endif %}
 
   <div class="d-flex gap-2">
     <button class="btn btn-primary">Guardar cambios</button>

@@ -840,12 +840,13 @@ def crear_producto():
     return render_template('producto_nuevo.html', categorias=categorias)
 
 
+# --- EDITAR PRODUCTO ---
 @app.route('/producto/<int:producto_id>/editar', methods=['GET', 'POST'])
 @login_required
 @require_roles('admin')
 def producto_editar(producto_id):
     producto = Producto.query.get_or_404(producto_id)
-    categorias = CategoriaProduccion.query.order_by(CategoriaProduccion.nombre.asc()).all()  # ✅ CORREGIDO
+    categorias = CategoriaProduccion.query.order_by(CategoriaProduccion.nombre.asc()).all()
 
     if request.method == 'POST':
         producto.nombre = request.form['nombre']
@@ -854,25 +855,16 @@ def producto_editar(producto_id):
         producto.bodega = request.form['bodega']
 
         categoria_id = request.form.get('categoria_id')
-        categoria_nombre = request.form.get('categoria_nombre')
-
-        if categoria_nombre:  # si crea una nueva categoría
-            nueva_cat = CategoriaProduccion(nombre=categoria_nombre)
-            db.session.add(nueva_cat)
-            db.session.commit()
-            producto.categoria_id = nueva_cat.id
-        elif categoria_id:
-            producto.categoria_id = int (categoria_id)
+        if categoria_id:
+            producto.categoria_id = int(categoria_id)
         else:
             producto.categoria_id = None
 
         db.session.commit()
-        flash('Producto actualizado correctamente.', 'success')
+        flash('Producto actualizado correctamente ✅', 'success')
         return redirect(url_for('produccion'))
 
     return render_template('editar_producto.html', producto=producto, categorias=categorias)
-
-
 
 
 @app.route('/productos/<int:producto_id>/eliminar', methods=['POST'])
