@@ -25,7 +25,13 @@
     <input type="date" name="fecha" value="{{ sel_fecha }}" class="form-control"
            onchange="this.form.submit()">
   </div>
-
+<!-- BOTÓN EXPORTAR FILTRADO -->
+  <div class="col-md-4 d-flex align-items-end">
+    <a href="{{ url_for('exportar_transferencias', destino=sel_destino, fecha=sel_fecha) }}"
+       class="btn btn-success w-100">
+       ⬇ Exportar filtrado
+    </a>
+  </div>
 </form>
 
 <div class="card shadow-sm">

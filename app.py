@@ -1183,6 +1183,56 @@ def transferencias():
         destinos=destinos_unicos
     )
 
+@app.route('/exportar_transferencias')
+@login_required
+def exportar_transferencias():
+    destino = request.args.get('destino', '').strip()
+    fecha = request.args.get('fecha', '').strip()
+
+    q = Transferencia.query.order_by(Transferencia.fecha.desc())
+
+    if destino:
+        q = q.filter(Transferencia.destino == destino)
+
+    if fecha:
+        try:
+            d = datetime.strptime(fecha, "%Y-%m-%d")
+            ini = datetime.combine(d.date(), datetime.min.time())
+            fin = datetime.combine(d.date(), datetime.max.time())
+            q = q.filter(Transferencia.fecha >= ini, Transferencia.fecha <= fin)
+        except:
+            pass
+
+    datos = q.all()
+
+    # Crear Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Transferencias"
+
+    headers = ["Fecha", "Producto", "Acabado", "Cantidad", "Origen", "Destino"]
+    ws.append(headers)
+
+    for t in datos:
+        ws.append([
+            t.fecha.strftime("%Y-%m-%d %H:%M"),
+            t.producto_nombre,
+            t.acabado,
+            t.cantidad,
+            t.origen,
+            t.destino
+        ])
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name='transferencias_filtradas.xlsx',
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
               
 
