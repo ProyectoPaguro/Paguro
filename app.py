@@ -196,6 +196,16 @@ class ProdMovimiento(db.Model):
     producto_id = db.Column(db.Integer, db.ForeignKey('producto.id'))
     producto = db.relationship('Producto', backref=db.backref('movimientos', lazy=True))
 
+class Transferencia(db.Model):
+    __tablename__ = "transferencia"
+
+    id = db.Column(db.Integer, primary_key=True)
+    producto_nombre = db.Column(db.String(120), nullable=False)
+    acabado = db.Column(db.String(120), nullable=False)
+    cantidad = db.Column(db.Float, nullable=False)
+    origen = db.Column(db.String(120), nullable=False)
+    destino = db.Column(db.String(120), nullable=False)
+    fecha = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 
@@ -952,6 +962,7 @@ def movimiento_produccion():
             flash('No hay suficiente stock del producto', 'danger')
             return render_template('movimiento_produccion.html',
                                    nombres=nombres, nombre_sel=nombre_sel, acabados=acabados, bodegas=bodegas)
+        
 
         # 1) Origen: salida
         p.cantidad_actual -= cantidad
@@ -961,6 +972,7 @@ def movimiento_produccion():
             producto=p,
             fecha=datetime.utcnow()
         )
+        
         db.session.add(mov_origen)
         db.session.flush()
 
@@ -995,6 +1007,18 @@ def movimiento_produccion():
             text("UPDATE prod_movimiento SET bodega=:b WHERE id=:id"),
             {"b": destino, "id": mov_dest.id}
         )
+        
+        # 3) Registrar la transferencia completa en una sola fila
+        t = Transferencia(
+        producto_nombre=p.nombre,
+        acabado=p.acabado,
+        cantidad=cantidad,
+        origen=p.bodega,
+        destino=destino,
+        fecha=datetime.utcnow()
+        )
+        db.session.add(t)
+
 
         db.session.commit()
         flash(f"Transferencia realizada: {cantidad} de “{p.nombre}” ({p.acabado}) de {p.bodega} → {destino}", 'success')
@@ -1094,7 +1118,22 @@ def go_produccion():
         try:
             return redirect(url_for('produccion_view')) 
         except Exception:
-            return redirect('/produccion')              
+            return redirect('/produccion')       
+
+@app.route('/transferencias')
+@login_required
+def transferencias():
+    destino = request.args.get('destino', '').strip()
+
+    q = Transferencia.query.order_by(Transferencia.fecha.desc())
+
+    if destino:
+        q = q.filter(Transferencia.destino == destino)
+
+    todas = q.all()
+
+    return render_template('transferencias.html', transferencias=todas, sel_destino=destino)
+              
 
 @app.route('/movimientos', endpoint='movimientos')
 @login_required
