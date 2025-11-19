@@ -157,7 +157,9 @@ class Usuario(UserMixin, db.Model):
     nombre = db.Column(db.String(100), nullable=False)
     email  = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    rol = db.Column(db.String(20), nullable=False, default='operario')  
+    rol = db.Column(db.String(20), nullable=False, default='operario')
+    bodega = db.Column(db.String(120), nullable=True)
+  
 
 class CategoriaProduccion(db.Model):
     __tablename__ = 'categoria_produccion'
@@ -817,12 +819,25 @@ def produccion_categoria(id_categoria):
     categoria = CategoriaProduccion.query.get_or_404(id_categoria)
     search = request.args.get('search', '')
 
-    productos = Producto.query.filter(
-        Producto.categoria_id == id_categoria,
-        (Producto.nombre.ilike(f'%{search}%')) | (Producto.acabado.ilike(f'%{search}%'))
-    ).all()
+    productos = (
+        Producto.query
+        .filter(Producto.categoria_id == id_categoria)
+        .filter(Producto.bodega == "Tocancipa")     # 👈 FILTRO IMPORTANTE
+        .filter(
+            (Producto.nombre.ilike(f'%{search}%')) |
+            (Producto.acabado.ilike(f'%{search}%'))
+        )
+        .order_by(Producto.nombre.asc())
+        .all()
+    )
 
-    return render_template('productos_por_categoria.html', categoria=categoria, productos=productos, search=search)
+    return render_template(
+        'productos_por_categoria.html', 
+        categoria=categoria, 
+        productos=productos, 
+        search=search
+    )
+
 
 
 
