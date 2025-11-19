@@ -197,14 +197,12 @@ class ProdMovimiento(db.Model):
     producto = db.relationship('Producto', backref=db.backref('movimientos', lazy=True))
 
 class Transferencia(db.Model):
-    __tablename__ = "transferencia"
-
     id = db.Column(db.Integer, primary_key=True)
-    producto_nombre = db.Column(db.String(120), nullable=False)
-    acabado = db.Column(db.String(120), nullable=False)
-    cantidad = db.Column(db.Float, nullable=False)
-    origen = db.Column(db.String(120), nullable=False)
-    destino = db.Column(db.String(120), nullable=False)
+    producto_nombre = db.Column(db.String(120))
+    acabado = db.Column(db.String(120))
+    cantidad = db.Column(db.Float)
+    origen = db.Column(db.String(120))
+    destino = db.Column(db.String(120))
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
 
 

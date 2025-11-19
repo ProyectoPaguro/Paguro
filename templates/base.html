@@ -105,6 +105,9 @@
            href="{{ url_for('historial_insumos') }}">Historial</a>
       </li>
     </ul>
+      <li class="nav-item">
+  <a class="nav-link" href="{{ url_for('transferencias') }}">Transferencias</a>
+</li>
 
     {% if current_user.is_authenticated and current_user.rol=='admin' %}
     <div class="ms-auto d-none d-md-flex gap-2">
