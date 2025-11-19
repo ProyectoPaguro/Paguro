@@ -703,16 +703,29 @@ def productos_por_categoria_tabla(categoria_id):
 @login_required
 def productos_por_categoria_vista(categoria_id):
     categorias = CategoriaProduccion.query.order_by(CategoriaProduccion.nombre.asc()).all()
+    BODEGA_ACTUAL = "Tocancipa"   # ← Aquí defines tu bodega
 
     if categoria_id == 0:
         categoria_nombre = "Sin categoría"
-        productos = Producto.query.filter(Producto.categoria_id.is_(None)).order_by(Producto.nombre.asc()).all()
+        productos = (
+            Producto.query
+            .filter(Producto.categoria_id.is_(None))
+            .filter(Producto.bodega == BODEGA_ACTUAL)
+            .order_by(Producto.nombre.asc())
+            .all()
+        )
     else:
         categoria = CategoriaProduccion.query.get_or_404(categoria_id)
         categoria_nombre = categoria.nombre
-        productos = Producto.query.filter_by(categoria_id=categoria_id).order_by(Producto.nombre.asc()).all()
+        productos = (
+            Producto.query
+            .filter(Producto.categoria_id == categoria_id)
+            .filter(Producto.bodega == BODEGA_ACTUAL)
+            .order_by(Producto.nombre.asc())
+            .all()
+        )
 
-    # Si se envió un cambio de categoría
+    # Si cambian categoría desde la vista
     if request.method == 'POST':
         producto_id = request.form.get('producto_id')
         nueva_categoria = request.form.get('nueva_categoria')
@@ -730,6 +743,7 @@ def productos_por_categoria_vista(categoria_id):
         categorias=categorias,
         categoria_id=categoria_id
     )
+
 
 @app.route('/produccion', endpoint='produccion')
 @login_required
@@ -1129,15 +1143,47 @@ def go_produccion():
 @login_required
 def transferencias():
     destino = request.args.get('destino', '').strip()
+    fecha_desde = request.args.get('desde', '')
+    fecha_hasta = request.args.get('hasta', '')
 
     q = Transferencia.query.order_by(Transferencia.fecha.desc())
 
+    # FILTRAR POR DESTINO
     if destino:
         q = q.filter(Transferencia.destino == destino)
 
+    # FILTRAR POR FECHA DESDE
+    if fecha_desde:
+        try:
+            d = datetime.strptime(fecha_desde, "%Y-%m-%d")
+            q = q.filter(Transferencia.fecha >= d)
+        except:
+            pass
+
+    # FILTRAR POR FECHA HASTA
+    if fecha_hasta:
+        try:
+            h = datetime.strptime(fecha_hasta, "%Y-%m-%d")
+            h = h.replace(hour=23, minute=59, second=59)
+            q = q.filter(Transferencia.fecha <= h)
+        except:
+            pass
+
     todas = q.all()
 
-    return render_template('transferencias.html', transferencias=todas, sel_destino=destino)
+    # Para evitar destinos repetidos
+    destinos_unicos = sorted({t.destino for t in Transferencia.query.all()})
+
+    return render_template(
+        'transferencias.html',
+        transferencias=todas,
+        sel_destino=destino,
+        sel_desde=fecha_desde,
+        sel_hasta=fecha_hasta,
+        destinos=destinos_unicos
+    )
+
+
               
 
 @app.route('/movimientos', endpoint='movimientos')

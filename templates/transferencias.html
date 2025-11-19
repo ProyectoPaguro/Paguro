@@ -4,16 +4,28 @@
 {% block contenido %}
 <h1 class="mb-4 text-primary">📦 Historial de Transferencias</h1>
 
-<form method="get" class="mb-3">
-  <label class="form-label">Filtrar por destino</label>
-  <select name="destino" class="form-select" onchange="this.form.submit()">
-    <option value="">Todos</option>
-    {% for t in transferencias %}
-      <option value="{{ t.destino }}" {% if sel_destino == t.destino %}selected{% endif %}>
-        {{ t.destino }}
-      </option>
-    {% endfor %}
-  </select>
+<form method="get" class="row mb-3 g-2">
+
+  <!-- FILTRO DESTINO -->
+  <div class="col-md-4">
+    <label class="form-label">Filtrar por destino</label>
+    <select name="destino" class="form-select" onchange="this.form.submit()">
+      <option value="">Todos</option>
+      {% for d in destinos %}
+        <option value="{{ d }}" {% if sel_destino == d %}selected{% endif %}>
+          {{ d }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- FILTRO FECHA -->
+  <div class="col-md-4">
+    <label class="form-label">Filtrar por fecha</label>
+    <input type="date" name="fecha" value="{{ sel_fecha }}" class="form-control"
+           onchange="this.form.submit()">
+  </div>
+
 </form>
 
 <div class="card shadow-sm">
@@ -48,4 +60,5 @@
     </table>
   </div>
 </div>
+
 {% endblock %}
