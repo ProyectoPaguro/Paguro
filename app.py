@@ -1020,7 +1020,8 @@ def movimiento_produccion():
 
         db.session.commit()
         flash(f"Transferencia realizada: {cantidad} de “{p.nombre}” ({p.acabado}) de {p.bodega} → {destino}", 'success')
-        return redirect(url_for('produccion'))
+        return redirect(url_for('movimiento_produccion'))
+
 
     # --- Entrada / Salida simples ---
     if cantidad <= 0:
@@ -1054,7 +1055,8 @@ def movimiento_produccion():
 
     db.session.commit()
     flash('Movimiento registrado ✅', 'success')
-    return redirect(url_for('produccion'))
+    return redirect(url_for('movimiento_produccion'))
+
 
 @app.route('/historial-produccion')
 @login_required
