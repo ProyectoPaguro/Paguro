@@ -1148,6 +1148,7 @@ def movimientos():
     return render_template('movimientos_recientes.html', movs=movs)
 
 
+
 @app.route('/registrar', methods=['GET', 'POST'])
 def registrar():
     hay_usuarios = Usuario.query.count() > 0
@@ -1218,6 +1219,62 @@ def _routes():
         out.append(f"{r.endpoint:30s} -> {r.rule}")
     return "<pre>" + "\n".join(sorted(out)) + "</pre>"
 
+@app.route('/admin_fix_uncat')
+@login_required
+def admin_fix_uncat():
+    if current_user.rol != 'admin':
+        return "Solo admins.", 403
+
+    prod_sin_cat = Producto.query.filter(Producto.categoria_id.is_(None)).all()
+
+    out = "<h1>Productos sin categoría</h1><ul>"
+    for p in prod_sin_cat:
+        out += f"<li>ID {p.id} — {p.nombre} ({p.acabado}) – Bodega: {p.bodega} – Cantidad: {p.cantidad_actual} "
+        out += f"<a href='/admin_fix_set_cat?id={p.id}&cat=1'>Asignar categoría 1</a> | "
+        out += f"<a href='/admin_fix_delete?id={p.id}'>Eliminar</a>"
+        out += "</li>"
+    out += "</ul>"
+
+    return out
+
+
+@app.route('/admin_fix_set_cat')
+@login_required
+def admin_fix_set_cat():
+    if current_user.rol != 'admin':
+        return "Solo admins.", 403
+
+    pid = request.args.get('id', type=int)
+    cat = request.args.get('cat', type=int)
+
+    p = Producto.query.get(pid)
+    if not p:
+        return "Producto no encontrado", 404
+
+    p.categoria_id = cat
+    db.session.commit()
+
+    return f"Producto {pid} movido a categoría {cat}. <a href='/admin_fix_uncat'>Volver</a>"
+
+
+@app.route('/admin_fix_delete')
+@login_required
+def admin_fix_delete():
+    if current_user.rol != 'admin':
+        return "Solo admins.", 403
+
+    pid = request.args.get('id', type=int)
+    p = Producto.query.get(pid)
+
+    if not p:
+        return "Producto no encontrado", 404
+
+    db.session.delete(p)
+    db.session.commit()
+
+    return f"Producto {pid} eliminado. <a href='/admin_fix_uncat'>Volver</a>"
+
+
 
 @app.route('/logout')
 @login_required
@@ -1255,6 +1312,8 @@ def descargar_bd():
         return send_file(db_path, as_attachment=True, download_name='database.db')
     else:
         return "No se encontró la base de datos en el servidor.", 404
+    
+    
 
 if __name__ == '__main__':
     app.run(debug=True)
