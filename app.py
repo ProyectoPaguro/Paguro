@@ -975,7 +975,7 @@ def movimiento_produccion():
                 .first())
         if not dest:
             dest = Producto(
-                nombre=p.nombre, acabado=p.acabado, cantidad_actual=0, bodega=destino
+                nombre=p.nombre, acabado=p.acabado, cantidad_actual=0, bodega=destino, categoria_id=p.categoria_id
             )
             db.session.add(dest)
             db.session.flush()
