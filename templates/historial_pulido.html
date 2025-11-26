@@ -72,24 +72,19 @@
     </thead>
 
     <tbody>
-      {% for r in registros %}
-      <tr>
-        <td>{{ r.fecha }}</td>
-        <td>{{ r.usuario.nombre }}</td>
-        <td>{{ r.producto }}</td>
-        <td>{{ r.acabado or '-' }}</td>
-        <td><strong>{{ r.cantidad }}</strong></td>
-        <td>
-          {% if r.categoria_id %}
-            {{ r.categoria_produccion.nombre if r.categoria_produccion else 'Sin categoría' }}
-          {% else %}
-            <span class="text-muted">Sin categoría</span>
-          {% endif %}
-        </td>
-        <td>{{ r.observaciones or '-' }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
+  {% for r in registros %}
+  <tr>
+    <td>{{ r.fecha.strftime('%d/%m/%Y') }}</td>
+    <td>{{ r.usuario.nombre }}</td>
+    <td>{{ r.producto.nombre if r.producto else '(Producto eliminado)' }}</td>
+    <td>{{ r.acabado or '-' }}</td>
+    <td>{{ r.cantidad }}</td>
+    <td>{{ r.categoria_produccion.nombre if r.categoria_produccion else '-' }}</td>
+    <td>{{ r.observaciones or '-' }}</td>
+  </tr>
+  {% endfor %}
+</tbody>
+
 
   </table>
   {% else %}
