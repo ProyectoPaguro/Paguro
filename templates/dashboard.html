@@ -187,5 +187,143 @@
   </div>
 </div>
 
+{# Solo para ADMIN: ver todo lo que está pulido pero aún no pasado a producción #}
+{% if current_user.rol == 'admin' %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div>
+      <span class="me-2">📦</span>
+      <strong>Pulidos pendientes de pasar a producción</strong>
+    </div>
+    <span class="badge bg-info">
+      Total: {{ registros_pulido_pendientes|length }}
+    </span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm mb-0 table-striped align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Fecha</th>
+            <th>Empleado</th>
+            <th>Producto</th>
+            <th>Acabado</th>
+            <th>Cant.</th>
+            <th style="width: 200px;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if registros_pulido_pendientes %}
+            {% for r in registros_pulido_pendientes %}
+            <tr>
+              <td>{{ r.fecha.strftime('%d/%m/%Y') }}</td>
+              <td>{{ r.usuario.nombre }}</td>
+              <td>{{ r.producto }}</td>
+              <td>{{ r.acabado or '-' }}</td>
+              <td>{{ r.cantidad }}</td>
+              <td>
+                <form action="{{ url_for('pulido_terminar', registro_id=r.id) }}"
+                      method="POST"
+                      onsubmit="return confirm('¿Marcar como terminado y pasarlo a producción?');">
+                  <button class="btn btn-sm btn-success">
+                    Marcar terminado y pasar a producción
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-3 text-muted">
+                No hay pulidos pendientes.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# Solo para operarios que pulen #}
+{% if current_user.rol == 'operario' %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header d-flex align-items-center">
+    <span class="me-2">🧽</span>
+    <strong>Registro de pulido del día</strong>
+  </div>
+  <div class="card-body">
+    <form action="{{ url_for('registrar_pulido') }}" method="POST" class="row g-2">
+      <div class="col-md-4">
+        <label class="form-label mb-1">Producto</label>
+        <input type="text" name="producto" class="form-control" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label mb-1">Acabado</label>
+        <input type="text" name="acabado" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label mb-1">Cantidad</label>
+        <input type="number" name="cantidad" class="form-control" min="1" value="1">
+      </div>
+      <div class="col-md-12">
+        <label class="form-label mb-1">Observaciones</label>
+        <input type="text" name="observaciones" class="form-control" placeholder="Ej: lote, detalles, etc.">
+      </div>
+
+      <div class="col-12 mt-2">
+        <button type="submit" class="btn btn-primary btn-sm">
+          Registrar pulido
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header">
+    <strong>Lo que has registrado hoy</strong>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0 table-striped">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Acabado</th>
+          <th>Cant.</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if registros_pulido_hoy_usuario %}
+          {% for r in registros_pulido_hoy_usuario %}
+          <tr>
+            <td>{{ r.producto }}</td>
+            <td>{{ r.acabado or '-' }}</td>
+            <td>{{ r.cantidad }}</td>
+            <td>
+              <span class="badge
+                {% if r.estado == 'pulido' %} bg-warning text-dark
+                {% elif r.estado == 'terminado' %} bg-success
+                {% else %} bg-secondary {% endif %}">
+                {{ r.estado }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="4" class="text-center py-3 text-muted">
+              Aún no has registrado pulidos hoy.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
 
 {% endblock %}
+

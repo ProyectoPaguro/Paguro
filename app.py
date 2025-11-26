@@ -159,7 +159,22 @@ class Usuario(UserMixin, db.Model):
     password = db.Column(db.String(200), nullable=False)
     rol = db.Column(db.String(20), nullable=False, default='operario')
    
-  
+class RegistroPulido(db.Model):
+    __tablename__ = 'registros_pulido'
+
+    id = db.Column(db.Integer, primary_key=True)
+    fecha = db.Column(db.Date, default=date.today, nullable=False)
+
+    # quién pulió
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    usuario = db.relationship('Usuario', backref=db.backref('registros_pulido', lazy=True))
+
+    # info del producto pulido
+    producto = db.Column(db.String(120), nullable=False)
+    acabado = db.Column(db.String(120))
+    cantidad = db.Column(db.Integer, default=1, nullable=False)
+    estado = db.Column(db.String(20), default='pulido', nullable=False)
+    observaciones = db.Column(db.Text)
 
 class CategoriaProduccion(db.Model):
     __tablename__ = 'categoria_produccion'
@@ -313,6 +328,27 @@ def dashboard():
                 Tarea.completada_en <= fin_hoy_utc)
         .order_by(Tarea.completada_en.desc().nullslast()).all())
 
+    # ✅ REGISTROS DE PULIDO
+
+    # 1) Lo que el usuario actual ha registrado hoy
+    registros_pulido_hoy_usuario = (
+        RegistroPulido.query
+        .filter(
+            RegistroPulido.fecha == date.today(),
+            RegistroPulido.usuario_id == current_user.id
+        )
+        .order_by(RegistroPulido.id.desc())
+        .all()
+    )
+
+    # 2) Todos los registros pendientes (estado="pulido")
+    registros_pulido_pendientes = (
+        RegistroPulido.query
+        .filter(RegistroPulido.estado == "pulido")
+        .order_by(RegistroPulido.fecha.desc(), RegistroPulido.id.desc())
+        .all()
+    )
+
     return render_template(
         'dashboard.html',
         total_insumos=total_insumos,
@@ -323,8 +359,71 @@ def dashboard():
         tareas_fundir_pend=tareas_fundir_pend,
         tareas_fundir_comp=tareas_fundir_comp,
         tareas_pulir_pend=tareas_pulir_pend,
-        tareas_pulir_comp=tareas_pulir_comp
+        tareas_pulir_comp=tareas_pulir_comp,
+        # 👇 nuevos contextos para la plantilla
+        registros_pulido_hoy_usuario=registros_pulido_hoy_usuario,
+        registros_pulido_pendientes=registros_pulido_pendientes
     )
+
+@app.post("/pulido/<int:registro_id>/terminar")
+@login_required
+@require_roles("admin")   # solo admin; luego puedes cambiarlo si quieres
+def pulido_terminar(registro_id):
+    reg = RegistroPulido.query.get_or_404(registro_id)
+
+    if reg.estado == "terminado":
+        flash("Este registro ya estaba marcado como terminado.", "info")
+        return redirect(url_for("dashboard"))
+
+    # --- Buscar o crear el producto en producción ---
+    # Puedes cambiar "Tocancipa" por la bodega que uses para producción final
+    BODEGA_PRODUCCION = "Tocancipa"
+
+    prod = (
+        Producto.query
+        .filter_by(
+            nombre=reg.producto,
+            acabado=reg.acabado,
+            bodega=BODEGA_PRODUCCION
+        )
+        .first()
+    )
+
+    if not prod:
+        # Si no existe el producto en esa bodega, lo creamos
+        prod = Producto(
+            nombre=reg.producto,
+            acabado=reg.acabado,
+            cantidad_actual=0,
+            bodega=BODEGA_PRODUCCION,
+            categoria_id=None  # o alguna categoría por defecto si quieres
+        )
+        db.session.add(prod)
+        db.session.flush()  # para que tenga id
+
+    # --- Aumentar stock en producción ---
+    prod.cantidad_actual += reg.cantidad
+
+    # --- Registrar movimiento de producción (Entrada) ---
+    mov = ProdMovimiento(
+        tipo="Entrada",
+        cantidad=reg.cantidad,
+        producto=prod,
+        fecha=datetime.utcnow(),
+        bodega=prod.bodega
+    )
+    db.session.add(mov)
+
+    # --- Marcar el registro de pulido como terminado ---
+    reg.estado = "terminado"
+
+    db.session.commit()
+
+    flash(
+        f"Pulido terminado: +{reg.cantidad} de '{reg.producto}' ({reg.acabado}) en {prod.bodega}.",
+        "success"
+    )
+    return redirect(url_for("dashboard"))
 
 
 @app.post("/tareas/agregar")
@@ -437,6 +536,47 @@ def historial_tareas():
                            tareas=tareas,
                            sel_tipo=tipo, sel_estado=estado,
                            sel_desde=desde or '', sel_hasta=hasta or '')
+
+@app.post("/pulido/registrar")
+@login_required
+def registrar_pulido():
+    # Si luego quieres limitar solo a cierto rol:
+    # if current_user.rol != 'operario':
+    #     abort(403)
+
+    producto = (request.form.get('producto') or '').strip()
+    acabado = (request.form.get('acabado') or '').strip()
+    cantidad_str = (request.form.get('cantidad') or '1').strip()
+    observaciones = (request.form.get('observaciones') or '').strip()
+
+    if not producto:
+        flash("Debes especificar el producto pulido.", "warning")
+        return redirect(url_for("dashboard"))
+
+    try:
+        cantidad = int(cantidad_str)
+        if cantidad <= 0:
+            raise ValueError
+    except ValueError:
+        flash("Cantidad inválida.", "warning")
+        return redirect(url_for("dashboard"))
+
+    reg = RegistroPulido(
+        fecha=date.today(),
+        usuario_id=current_user.id,
+        producto=producto,
+        acabado=acabado,
+        cantidad=cantidad,
+        observaciones=observaciones,
+        estado="pulido"
+    )
+
+    db.session.add(reg)
+    db.session.commit()
+    flash("Pulido registrado ✅", "success")
+    return redirect(url_for("dashboard"))
+
+
 
 @app.route('/inventario', endpoint='inventario')
 @login_required
