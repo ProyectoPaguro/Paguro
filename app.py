@@ -164,12 +164,8 @@ class RegistroPulido(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     fecha = db.Column(db.Date, default=date.today, nullable=False)
-
-    # quién pulió
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
     usuario = db.relationship('Usuario', backref=db.backref('registros_pulido', lazy=True))
-
-    # info del producto pulido
     producto = db.Column(db.String(120), nullable=False)
     acabado = db.Column(db.String(120))
     cantidad = db.Column(db.Integer, default=1, nullable=False)
@@ -269,6 +265,16 @@ with app.app_context():
             db.session.commit()
     except Exception as e:
         print("Aviso 'rol':", e)
+    # --- MIGRACIÓN PARA REGISTROS_PULIDO: agregar categoria_id ---
+    try:
+        cols = db.session.execute(text("PRAGMA table_info(registros_pulido);")).fetchall()
+        colnames = [c[1] for c in cols]
+        if 'categoria_id' not in colnames:
+            db.session.execute(text("ALTER TABLE registros_pulido ADD COLUMN categoria_id INTEGER;"))
+            db.session.commit()
+            print("✔ columna categoria_id agregada a registros_pulido")
+    except Exception as e:
+        print("⚠ Error agregando categoria_id:", e)
 
 def require_roles(*roles):
     def deco(fn):
