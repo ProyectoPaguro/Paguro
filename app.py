@@ -965,30 +965,33 @@ def produccion():
         q=q
     )
 
-@app.route('/produccion/<int:id_categoria>')
+@app.get("/produccion/<int:id_categoria>")
 @login_required
 def produccion_categoria(id_categoria):
-    categoria = CategoriaProduccion.query.get_or_404(id_categoria)
-    search = request.args.get('search', '')
+    categoria = CategoriaProduccion.query.get(id_categoria)
 
-    productos = (
-        Producto.query
-        .filter(Producto.categoria_id == id_categoria)
-        .filter(Producto.bodega == "Tocancipa")     # 👈 FILTRO IMPORTANTE
-        .filter(
-            (Producto.nombre.ilike(f'%{search}%')) |
-            (Producto.acabado.ilike(f'%{search}%'))
+    search = request.args.get("search", "")
+
+    productos = Producto.query.filter_by(categoria_id=id_categoria)
+
+    if search:
+        productos = productos.filter(
+            Producto.acabado.ilike(f"%{search}%")
         )
-        .order_by(Producto.nombre.asc())
-        .all()
-    )
+
+    productos = productos.all()
+
+    categorias = CategoriaProduccion.query.all()
 
     return render_template(
-        'productos_por_categoria.html', 
-        categoria=categoria, 
-        productos=productos, 
+        "productos_por_categoria.html",
+        categoria_id=id_categoria,          #  <-- ESTA LÍNEA FALTABA
+        categoria_nombre=categoria.nombre,
+        productos=productos,
+        categorias=categorias,
         search=search
     )
+
 
 
 
