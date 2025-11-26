@@ -558,20 +558,18 @@ def historial_tareas():
 @app.post("/pulido/registrar")
 @login_required
 def registrar_pulido():
-    # Si luego quieres limitar solo a cierto rol:
-    # if current_user.rol != 'operario':
-    #     abort(403)
 
-    producto = (request.form.get('producto') or '').strip()
-    acabado = (request.form.get('acabado') or '').strip()
-    cantidad_str = (request.form.get('cantidad') or '1').strip()
-    observaciones = (request.form.get('observaciones') or '').strip()
-    categoria_id = request.form.get('categoria_id')
+    producto_id = request.form.get("producto_id")   # 👈 debe ser el ID
+    cantidad_str = (request.form.get("cantidad") or '1').strip()
+    observaciones = (request.form.get("observaciones") or '').strip()
+    categoria_id = request.form.get("categoria_id")
 
-    if not producto:
-        flash("Debes especificar el producto pulido.", "warning")
+    # Validar producto
+    if not producto_id:
+        flash("Debes seleccionar un producto.", "warning")
         return redirect(url_for("dashboard"))
 
+    # Validar cantidad
     try:
         cantidad = int(cantidad_str)
         if cantidad <= 0:
@@ -581,20 +579,21 @@ def registrar_pulido():
         return redirect(url_for("dashboard"))
 
     reg = RegistroPulido(
-        fecha=date.today(),
-        usuario_id=current_user.id,
-        producto=producto,
-        acabado=acabado,
-        cantidad=cantidad,
-        observaciones=observaciones,
-        categoria_id=int(categoria_id),
-        estado="pulido"
-    )
+    fecha=date.today(),
+    usuario_id=current_user.id,
+    producto_id=int(producto_id),
+    cantidad=cantidad,
+    categoria_id=int(categoria_id),
+    estado="pulido"
+)
+
 
     db.session.add(reg)
     db.session.commit()
+
     flash("Pulido registrado ✅", "success")
     return redirect(url_for("dashboard"))
+
 
 
 
