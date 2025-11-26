@@ -553,6 +553,7 @@ def registrar_pulido():
     acabado = (request.form.get('acabado') or '').strip()
     cantidad_str = (request.form.get('cantidad') or '1').strip()
     observaciones = (request.form.get('observaciones') or '').strip()
+    categoria_id = request.form.get('categoria_id')
 
     if not producto:
         flash("Debes especificar el producto pulido.", "warning")
@@ -573,7 +574,7 @@ def registrar_pulido():
         acabado=acabado,
         cantidad=cantidad,
         observaciones=observaciones,
-        categoria_id = request.form.get('categoria_id')
+        categoria_id=int(categoria_id),
         estado="pulido"
     )
 
