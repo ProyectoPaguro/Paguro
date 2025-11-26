@@ -169,15 +169,15 @@ class RegistroPulido(db.Model):
     estado = db.Column(db.String(20), default="pulido")
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # 🔥 Ahora sí con FK real
     categoria_id = db.Column(db.Integer, db.ForeignKey('categoria_produccion.id'))
 
-    categoria_produccion = db.relationship('CategoriaProduccion')
+    # 🔹 NUEVOS CAMPOS
+    observaciones = db.Column(db.String(255))
+    acabado = db.Column(db.String(120))
 
+    categoria_produccion = db.relationship('CategoriaProduccion')
     usuario = db.relationship('Usuario', backref='registros_pulido')
     producto = db.relationship('Producto', backref='registros_pulido')
-
-
 
 
 class CategoriaProduccion(db.Model):
@@ -273,15 +273,27 @@ with app.app_context():
     except Exception as e:
         print("Aviso 'rol':", e)
     # --- MIGRACIÓN PARA REGISTROS_PULIDO: agregar categoria_id ---
+    # --- MIGRACIONES PARA REGISTROS_PULIDO ---
     try:
         cols = db.session.execute(text("PRAGMA table_info(registros_pulido);")).fetchall()
         colnames = [c[1] for c in cols]
+
         if 'categoria_id' not in colnames:
             db.session.execute(text("ALTER TABLE registros_pulido ADD COLUMN categoria_id INTEGER;"))
-            db.session.commit()
             print("✔ columna categoria_id agregada a registros_pulido")
+
+        if 'observaciones' not in colnames:
+            db.session.execute(text("ALTER TABLE registros_pulido ADD COLUMN observaciones VARCHAR(255);"))
+            print("✔ columna observaciones agregada a registros_pulido")
+
+        if 'acabado' not in colnames:
+            db.session.execute(text("ALTER TABLE registros_pulido ADD COLUMN acabado VARCHAR(120);"))
+            print("✔ columna acabado agregada a registros_pulido")
+
+        db.session.commit()
     except Exception as e:
-        print("⚠ Error agregando categoria_id:", e)
+        print("⚠ Error migrando registros_pulido:", e)
+
 
 def require_roles(*roles):
     def deco(fn):
