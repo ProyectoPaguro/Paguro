@@ -394,6 +394,8 @@ def dashboard():
 )
 
 
+from sqlalchemy import func
+
 @app.post("/pulido/<int:registro_id>/terminar")
 @login_required
 @require_roles("admin")
@@ -406,17 +408,18 @@ def pulido_terminar(registro_id):
 
     BODEGA_PRODUCCION = "Tocancipa"
 
-    # 🔥 USAR DATOS DEL OBJETO Producto
+    # Búsqueda insensible a mayúsculas
     prod = (
         Producto.query
-        .filter_by(
-            nombre=reg.producto.nombre,
-            acabado=reg.producto.acabado,
-            bodega=BODEGA_PRODUCCION
+        .filter(
+            func.lower(Producto.nombre) == reg.producto.nombre.lower(),
+            func.lower(Producto.acabado) == (reg.producto.acabado or "").lower(),
+            Producto.bodega == BODEGA_PRODUCCION
         )
         .first()
     )
 
+    # Si no existe: crearlo
     if not prod:
         prod = Producto(
             nombre=reg.producto.nombre,
@@ -428,31 +431,28 @@ def pulido_terminar(registro_id):
         db.session.add(prod)
         db.session.flush()
 
-    # Aumentar stock
+    # Sumar al inventario
     prod.cantidad_actual += reg.cantidad
 
-    # Movimiento de producción
+    # Registrar movimiento
     mov = ProdMovimiento(
         tipo="Entrada",
         cantidad=reg.cantidad,
-        producto_id=prod.id,  # ✔ YA ESTÁ BIEN
+        producto_id=prod.id,
         fecha=datetime.utcnow(),
         bodega=prod.bodega
     )
     db.session.add(mov)
 
-    # Marcar como terminado
+    # Finalizar registro
     reg.estado = "terminado"
-
     db.session.commit()
 
     flash(
-        f"Pulido terminado: +{reg.cantidad} de '{reg.producto.nombre}' "
-        f"({reg.producto.acabado}) en {prod.bodega}.",
+        f"Pulido terminado: +{reg.cantidad} de '{reg.producto.nombre}' ({reg.producto.acabado}) en {prod.bodega}.",
         "success"
     )
     return redirect(url_for("dashboard"))
-
 
 
 
