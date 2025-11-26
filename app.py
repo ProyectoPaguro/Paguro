@@ -163,20 +163,26 @@ class RegistroPulido(db.Model):
     __tablename__ = 'registros_pulido'
 
     id = db.Column(db.Integer, primary_key=True)
-    fecha = db.Column(db.Date, nullable=False)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
-    producto = db.Column(db.String(200))
-    acabado = db.Column(db.String(200))
-    cantidad = db.Column(db.Integer)
-    observaciones = db.Column(db.String(500))
-    estado = db.Column(db.String(50), default='pulido')
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    producto_id = db.Column(db.Integer, db.ForeignKey('producto.id'), nullable=False)
+    cantidad = db.Column(db.Integer, nullable=False)
+    estado = db.Column(db.String(20), default="pulido")
+    fecha = db.Column(db.DateTime, default=datetime.utcnow)
 
-    categoria_id = db.Column(db.Integer, db.ForeignKey('categorias_produccion.id'), nullable=True)
+    # 🔥 Campo agregado manualmente
+    categoria_id = db.Column(db.Integer)
 
-    # 🔹 ESTA ES LA RELACIÓN QUE FALTA
-    categoria_produccion = db.relationship("CategoriaProduccion", backref="registros_pulido", lazy=True)
+    # 🔥 Relación manual (sin foreign key física en SQLite)
+    categoria_produccion = db.relationship(
+        'CategoriaProduccion',
+        primaryjoin="RegistroPulido.categoria_id == CategoriaProduccion.id",
+        viewonly=True
+    )
 
-    usuario = db.relationship("Usuario")
+    usuario = db.relationship('Usuario', backref='registros_pulido')
+    producto = db.relationship('Producto', backref='registros_pulido')
+
+
 
 
 class CategoriaProduccion(db.Model):
