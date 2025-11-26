@@ -570,22 +570,15 @@ def historial_tareas():
 @app.post("/pulido/registrar")
 @login_required
 def registrar_pulido():
-    nombre_producto = request.form.get("producto") or ""
-    acabado = request.form.get("acabado") or ""
+    producto_nombre = (request.form.get("producto") or "").strip()
+    acabado = (request.form.get("acabado") or "").strip()
     cantidad_str = request.form.get("cantidad") or "1"
-    categoria_id = request.form.get("categoria_id") or None
+    categoria_id = request.form.get("categoria_id")
     observaciones = request.form.get("observaciones") or ""
 
-    # Buscar el producto por nombre + acabado
-    producto = (
-        Producto.query
-        .filter(Producto.nombre == nombre_producto.strip())
-        .filter(Producto.acabado == acabado.strip())
-        .first()
-    )
-
-    if not producto:
-        flash("❌ Producto no encontrado. Debe existir en producción.", "warning")
+    # Validación básica
+    if not producto_nombre:
+        flash("Debes especificar el producto.", "warning")
         return redirect(request.referrer or url_for("dashboard"))
 
     try:
@@ -596,6 +589,32 @@ def registrar_pulido():
         flash("Cantidad inválida.", "warning")
         return redirect(request.referrer or url_for("dashboard"))
 
+    # Normalizar texto
+    nombre_norm = producto_nombre.lower().strip()
+    acabado_norm = acabado.lower().strip()
+
+    BODEGA_PRODUCCION = "Tocancipa"
+
+    # 🔍 BUSCAR PRODUCTO EN INVENTARIO
+    producto = Producto.query.filter(
+        func.lower(Producto.nombre) == nombre_norm,
+        func.lower(Producto.acabado) == acabado_norm,
+        Producto.bodega == BODEGA_PRODUCCION
+    ).first()
+
+    # 🟢 SI NO EXISTE → CREARLO AUTOMÁTICAMENTE
+    if not producto:
+        producto = Producto(
+            nombre=producto_nombre.strip(),
+            acabado=acabado.strip(),
+            cantidad_actual=0,
+            bodega=BODEGA_PRODUCCION,
+            categoria_id=int(categoria_id) if categoria_id else None
+        )
+        db.session.add(producto)
+        db.session.flush()   # para obtener el ID
+
+    # 🔵 REGISTRAR PULIDO
     reg = RegistroPulido(
         fecha=date.today(),
         usuario_id=current_user.id,
@@ -612,9 +631,6 @@ def registrar_pulido():
 
     flash("Pulido registrado correctamente.", "success")
     return redirect(request.referrer or url_for("dashboard"))
-
-
-
 
 
 @app.route('/inventario', endpoint='inventario')
