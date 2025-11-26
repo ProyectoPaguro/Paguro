@@ -163,15 +163,21 @@ class RegistroPulido(db.Model):
     __tablename__ = 'registros_pulido'
 
     id = db.Column(db.Integer, primary_key=True)
-    fecha = db.Column(db.Date, default=date.today, nullable=False)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
-    usuario = db.relationship('Usuario', backref=db.backref('registros_pulido', lazy=True))
-    producto = db.Column(db.String(120), nullable=False)
-    acabado = db.Column(db.String(120))
-    cantidad = db.Column(db.Integer, default=1, nullable=False)
-    categoria_id = db.Column(db.Integer, db.ForeignKey('categoria_produccion.id'))
-    estado = db.Column(db.String(20), default='pulido', nullable=False)
-    observaciones = db.Column(db.Text)
+    fecha = db.Column(db.Date, nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
+    producto = db.Column(db.String(200))
+    acabado = db.Column(db.String(200))
+    cantidad = db.Column(db.Integer)
+    observaciones = db.Column(db.String(500))
+    estado = db.Column(db.String(50), default='pulido')
+
+    categoria_id = db.Column(db.Integer, db.ForeignKey('categorias_produccion.id'), nullable=True)
+
+    # 🔹 ESTA ES LA RELACIÓN QUE FALTA
+    categoria_produccion = db.relationship("CategoriaProduccion", backref="registros_pulido", lazy=True)
+
+    usuario = db.relationship("Usuario")
+
 
 class CategoriaProduccion(db.Model):
     __tablename__ = 'categoria_produccion'

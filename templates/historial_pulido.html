@@ -81,7 +81,7 @@
         <td><strong>{{ r.cantidad }}</strong></td>
         <td>
           {% if r.categoria_id %}
-            {{ r.categoria_produccion.nombre }}
+            {{ r.categoria_produccion.nombre if r.categoria_produccion else 'Sin categoría' }}
           {% else %}
             <span class="text-muted">Sin categoría</span>
           {% endif %}
