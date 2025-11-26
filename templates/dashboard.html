@@ -313,7 +313,7 @@
         {% if registros_pulido_hoy_usuario %}
           {% for r in registros_pulido_hoy_usuario %}
           <tr>
-            <td>{{ r.producto.nombre if r.producto else '(Producto eliminado)' }}</td>
+            <td>{{ r.producto }}</td>
             <td>{{ r.acabado or '-' }}</td>
             <td>{{ r.cantidad }}</td>
             <td>
