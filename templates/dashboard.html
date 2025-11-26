@@ -267,6 +267,15 @@
         <label class="form-label mb-1">Cantidad</label>
         <input type="number" name="cantidad" class="form-control" min="1" value="1">
       </div>
+      <div class="col-md-4">
+  <label class="form-label mb-1">Categoría</label>
+  <select name="categoria_id" class="form-control" required>
+    <option value="">Seleccionar categoría...</option>
+    {% for c in categorias_produccion %}
+      <option value="{{ c.id }}">{{ c.nombre }}</option>
+    {% endfor %}
+  </select>
+</div>
       <div class="col-md-12">
         <label class="form-label mb-1">Observaciones</label>
         <input type="text" name="observaciones" class="form-control" placeholder="Ej: lote, detalles, etc.">

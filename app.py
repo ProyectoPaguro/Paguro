@@ -173,6 +173,7 @@ class RegistroPulido(db.Model):
     producto = db.Column(db.String(120), nullable=False)
     acabado = db.Column(db.String(120))
     cantidad = db.Column(db.Integer, default=1, nullable=False)
+    categoria_id = db.Column(db.Integer, db.ForeignKey('categoria_produccion.id'))
     estado = db.Column(db.String(20), default='pulido', nullable=False)
     observaciones = db.Column(db.Text)
 
@@ -349,21 +350,24 @@ def dashboard():
         .all()
     )
 
+    categorias_produccion = CategoriaProduccion.query.order_by(CategoriaProduccion.nombre.asc()).all()
+
     return render_template(
-        'dashboard.html',
-        total_insumos=total_insumos,
-        total_productos=total_productos,
-        movs_hoy=movs_hoy,
-        bajos=bajos,
-        umbral=UMBRAL,
-        tareas_fundir_pend=tareas_fundir_pend,
-        tareas_fundir_comp=tareas_fundir_comp,
-        tareas_pulir_pend=tareas_pulir_pend,
-        tareas_pulir_comp=tareas_pulir_comp,
-        # 👇 nuevos contextos para la plantilla
-        registros_pulido_hoy_usuario=registros_pulido_hoy_usuario,
-        registros_pulido_pendientes=registros_pulido_pendientes
-    )
+    'dashboard.html',
+    total_insumos=total_insumos,
+    total_productos=total_productos,
+    movs_hoy=movs_hoy,
+    bajos=bajos,
+    umbral=UMBRAL,
+    tareas_fundir_pend=tareas_fundir_pend,
+    tareas_fundir_comp=tareas_fundir_comp,
+    tareas_pulir_pend=tareas_pulir_pend,
+    tareas_pulir_comp=tareas_pulir_comp,
+    registros_pulido_hoy_usuario=registros_pulido_hoy_usuario,
+    registros_pulido_pendientes=registros_pulido_pendientes,
+    categorias_produccion=categorias_produccion   # <-- NUEVO
+)
+
 
 @app.post("/pulido/<int:registro_id>/terminar")
 @login_required
@@ -392,12 +396,13 @@ def pulido_terminar(registro_id):
     if not prod:
         # Si no existe el producto en esa bodega, lo creamos
         prod = Producto(
-            nombre=reg.producto,
-            acabado=reg.acabado,
-            cantidad_actual=0,
-            bodega=BODEGA_PRODUCCION,
-            categoria_id=None  # o alguna categoría por defecto si quieres
-        )
+    nombre=reg.producto,
+    acabado=reg.acabado,
+    cantidad_actual=0,
+    bodega=BODEGA_PRODUCCION,
+    categoria_id=reg.categoria_id   # 👈 USAMOS LA CATEGORÍA DEL EMPLEADO
+)
+
         db.session.add(prod)
         db.session.flush()  # para que tenga id
 
@@ -568,6 +573,7 @@ def registrar_pulido():
         acabado=acabado,
         cantidad=cantidad,
         observaciones=observaciones,
+        categoria_id = request.form.get('categoria_id')
         estado="pulido"
     )
 
