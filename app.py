@@ -558,15 +558,22 @@ def historial_tareas():
 @app.post("/pulido/registrar")
 @login_required
 def registrar_pulido():
-    producto_id = request.form.get("producto_id")
+    nombre_producto = request.form.get("producto") or ""
+    acabado = request.form.get("acabado") or ""
     cantidad_str = request.form.get("cantidad") or "1"
     categoria_id = request.form.get("categoria_id") or None
     observaciones = request.form.get("observaciones") or ""
-    acabado = request.form.get("acabado") or ""
 
-    # Validación correcta
-    if not producto_id:
-        flash("Debes seleccionar un producto.", "warning")
+    # Buscar el producto por nombre + acabado
+    producto = (
+        Producto.query
+        .filter(Producto.nombre == nombre_producto.strip())
+        .filter(Producto.acabado == acabado.strip())
+        .first()
+    )
+
+    if not producto:
+        flash("❌ Producto no encontrado. Debe existir en producción.", "warning")
         return redirect(request.referrer or url_for("dashboard"))
 
     try:
@@ -580,7 +587,7 @@ def registrar_pulido():
     reg = RegistroPulido(
         fecha=date.today(),
         usuario_id=current_user.id,
-        producto_id=int(producto_id),
+        producto_id=producto.id,
         cantidad=cantidad,
         estado="pulido",
         categoria_id=int(categoria_id) if categoria_id else None,
@@ -593,6 +600,7 @@ def registrar_pulido():
 
     flash("Pulido registrado correctamente.", "success")
     return redirect(request.referrer or url_for("dashboard"))
+
 
 
 
