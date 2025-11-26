@@ -278,7 +278,7 @@
 </div>
       <div class="col-md-12">
         <label class="form-label mb-1">Observaciones</label>
-        <input type="text" name="observaciones" class="form-control" placeholder="Ej: lote, detalles, etc.">
+        <input type="text" name="observaciones" class="form-control" placeholder="Ej: Es Pedido O Producto Para Inventario">
       </div>
 
       <div class="col-12 mt-2">
@@ -291,9 +291,14 @@
 </div>
 
 <div class="card shadow-sm mb-4">
-  <div class="card-header">
-    <strong>Lo que has registrado hoy</strong>
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>Productos Pulidos</strong>
+
+    <a href="{{ url_for('historial_pulido') }}" class="btn btn-primary btn-sm">
+        📜 Ver historial de pulido
+    </a>
   </div>
+
   <div class="card-body p-0">
     <table class="table table-sm mb-0 table-striped">
       <thead>
@@ -332,6 +337,7 @@
     </table>
   </div>
 </div>
+
 {% endif %}
 
 {% endblock %}

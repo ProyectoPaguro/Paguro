@@ -1307,6 +1307,84 @@ def go_produccion():
         except Exception:
             return redirect('/produccion')       
 
+@app.route('/historial_pulido', methods=['GET'])
+@login_required
+def historial_pulido():
+
+    # 📌 Todos (operarios y admin) pueden ver TODO
+    query = RegistroPulido.query
+
+    # 📌 Filtros
+    filtro = request.args.get("filtro", "general")
+    fecha = request.args.get("fecha")
+    year = request.args.get("year")
+    month = request.args.get("month")
+    week = request.args.get("week")
+
+    from datetime import date, timedelta, datetime
+
+    # ---------------------------
+    # 📌 GENERAL
+    # ---------------------------
+    if filtro == "general":
+        registros = query.order_by(
+            RegistroPulido.fecha.desc(),
+            RegistroPulido.id.desc()
+        ).all()
+
+    # ---------------------------
+    # 📌 POR DÍA
+    # ---------------------------
+    elif filtro == "dia" and fecha:
+        fecha_obj = datetime.strptime(fecha, "%Y-%m-%d").date()
+        registros = query.filter(
+            RegistroPulido.fecha == fecha_obj
+        ).order_by(RegistroPulido.id.desc()).all()
+
+    # ---------------------------
+    # 📌 POR SEMANA
+    # ---------------------------
+    elif filtro == "semana" and year and week:
+        year = int(year)
+        week = int(week)
+        start = datetime.fromisocalendar(year, week, 1).date()
+        end = start + timedelta(days=6)
+
+        registros = query.filter(
+            RegistroPulido.fecha.between(start, end)
+        ).order_by(RegistroPulido.fecha.desc()).all()
+
+    # ---------------------------
+    # 📌 POR MES
+    # ---------------------------
+    elif filtro == "mes" and year and month:
+        year = int(year)
+        month = int(month)
+
+        start = date(year, month, 1)
+        if month == 12:
+            end = date(year + 1, 1, 1) - timedelta(days=1)
+        else:
+            end = date(year, month + 1, 1) - timedelta(days=1)
+
+        registros = query.filter(
+            RegistroPulido.fecha.between(start, end)
+        ).order_by(RegistroPulido.fecha.desc()).all()
+
+    else:
+        registros = []
+
+    return render_template(
+        "historial_pulido.html",
+        registros=registros,
+        filtro=filtro,
+        fecha=fecha,
+        year=year,
+        month=month,
+        week=week
+    )
+
+
 @app.route('/transferencias')
 @login_required
 def transferencias():
