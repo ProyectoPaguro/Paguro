@@ -559,42 +559,35 @@ def historial_tareas():
 @login_required
 def registrar_pulido():
 
-    producto_id = request.form.get("producto_id")   # 👈 debe ser el ID
-    cantidad_str = (request.form.get("cantidad") or '1').strip()
-    observaciones = (request.form.get("observaciones") or '').strip()
+    producto_id = request.form.get("producto_id")  # <---- AQUÍ ESTABA EL PROBLEMA
+    cantidad_str = (request.form.get("cantidad") or "1").strip()
     categoria_id = request.form.get("categoria_id")
 
-    # Validar producto
     if not producto_id:
         flash("Debes seleccionar un producto.", "warning")
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("produccion"))
 
-    # Validar cantidad
     try:
         cantidad = int(cantidad_str)
         if cantidad <= 0:
             raise ValueError
     except ValueError:
         flash("Cantidad inválida.", "warning")
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("produccion"))
 
     reg = RegistroPulido(
-    fecha=date.today(),
-    usuario_id=current_user.id,
-    producto_id=int(producto_id),
-    cantidad=cantidad,
-    categoria_id=int(categoria_id),
-    estado="pulido"
-)
-
+        fecha=date.today(),
+        usuario_id=current_user.id,
+        producto_id=int(producto_id),
+        cantidad=cantidad,
+        categoria_id=int(categoria_id),
+        estado="pulido"
+    )
 
     db.session.add(reg)
     db.session.commit()
-
     flash("Pulido registrado ✅", "success")
-    return redirect(url_for("dashboard"))
-
-
+    return redirect(url_for("produccion"))
 
 
 @app.route('/inventario', endpoint='inventario')
