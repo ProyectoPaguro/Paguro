@@ -23,7 +23,8 @@
   {% if productos %}
 
     <!-- 🔍 Buscador -->
-    <form method="get" action="{{ url_for('produccion_categoria', id_categoria=categoria_id) }}" class="d-flex justify-content-center mb-4">
+    <form method="get" action="{{ url_for('produccion_categoria', id_categoria=categoria_id) }}" 
+          class="d-flex justify-content-center mb-4">
       <input 
         type="text" 
         name="search" 
@@ -34,10 +35,10 @@
       <button type="submit" class="btn btn-primary">Buscar</button>
     </form>
 
-    <!-- 🔄 Botón limpiar búsqueda -->
     {% if search %}
     <div class="text-center mb-4">
-      <a href="{{ url_for('produccion_categoria', id_categoria=categoria_id) }}" class="btn btn-outline-secondary btn-sm">
+      <a href="{{ url_for('produccion_categoria', id_categoria=categoria_id) }}" 
+         class="btn btn-outline-secondary btn-sm">
         Limpiar búsqueda
       </a>
     </div>
@@ -51,7 +52,6 @@
           <th>Acabado</th>
           <th>Cantidad</th>
           <th>Bodega</th>
-          <th>Pulido</th>
 
           {% if categoria_nombre == "Sin categoría" %}
             <th>Asignar categoría</th>
@@ -71,24 +71,6 @@
           <td>{{ p.cantidad_actual }}</td>
           <td>{{ p.bodega or '-' }}</td>
 
-          <!-- PULIDO -->
-          <td>
-            {% if current_user.rol in ['admin', 'operario'] %}
-            <form action="{{ url_for('registrar_pulido') }}" method="POST">
-              <input type="hidden" name="producto_id" value="{{ p.id }}">
-              <input type="hidden" name="acabado" value="{{ p.acabado }}">
-              <input type="hidden" name="categoria_id" value="{{ categoria_id }}">
-              <input type="number" name="cantidad" 
-                     class="form-control form-control-sm" 
-                     placeholder="Cant." min="1" required>
-              <button class="btn btn-sm btn-primary mt-1">Pulido</button>
-            </form>
-            {% else %}
-              -
-            {% endif %}
-          </td>
-
-          <!-- ASIGNAR CATEGORÍA -->
           {% if categoria_nombre == "Sin categoría" %}
           <td>
             <form method="POST" action="{{ url_for('asignar_categoria') }}">
@@ -106,10 +88,10 @@
           </td>
           {% endif %}
 
-          <!-- ACCIONES ADMIN -->
           {% if current_user.rol == 'admin' %}
           <td>
-            <a href="{{ url_for('producto_editar', producto_id=p.id) }}" class="btn btn-sm btn-warning">
+            <a href="{{ url_for('producto_editar', producto_id=p.id) }}" 
+               class="btn btn-sm btn-warning">
               <i class="bi bi-pencil-square"></i> Editar
             </a>
 
