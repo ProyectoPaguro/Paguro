@@ -406,37 +406,36 @@ def pulido_terminar(registro_id):
 
     BODEGA_PRODUCCION = "Tocancipa"
 
-    # Buscar producto existente
+    # 🔥 USAR DATOS DEL OBJETO Producto
     prod = (
         Producto.query
         .filter_by(
-            nombre=reg.producto,
-            acabado=reg.acabado,
+            nombre=reg.producto.nombre,
+            acabado=reg.producto.acabado,
             bodega=BODEGA_PRODUCCION
         )
         .first()
     )
 
     if not prod:
-        # Crear si no existe
         prod = Producto(
-            nombre=reg.producto,
-            acabado=reg.acabado,
+            nombre=reg.producto.nombre,
+            acabado=reg.producto.acabado,
             cantidad_actual=0,
             bodega=BODEGA_PRODUCCION,
             categoria_id=reg.categoria_id
         )
         db.session.add(prod)
-        db.session.flush()   # obtener id
+        db.session.flush()
 
     # Aumentar stock
     prod.cantidad_actual += reg.cantidad
 
-    # Movimiento
+    # Movimiento de producción
     mov = ProdMovimiento(
         tipo="Entrada",
         cantidad=reg.cantidad,
-        producto_id=prod.id,   # ✔ CORRECTO
+        producto_id=prod.id,  # ✔ YA ESTÁ BIEN
         fecha=datetime.utcnow(),
         bodega=prod.bodega
     )
@@ -448,10 +447,12 @@ def pulido_terminar(registro_id):
     db.session.commit()
 
     flash(
-        f"Pulido terminado: +{reg.cantidad} de '{reg.producto}' ({reg.acabado}) en {prod.bodega}.",
+        f"Pulido terminado: +{reg.cantidad} de '{reg.producto.nombre}' "
+        f"({reg.producto.acabado}) en {prod.bodega}.",
         "success"
     )
     return redirect(url_for("dashboard"))
+
 
 
 
