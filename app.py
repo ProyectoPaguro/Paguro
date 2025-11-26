@@ -169,15 +169,10 @@ class RegistroPulido(db.Model):
     estado = db.Column(db.String(20), default="pulido")
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # 🔥 Campo agregado manualmente
-    categoria_id = db.Column(db.Integer)
+    # 🔥 Ahora sí con FK real
+    categoria_id = db.Column(db.Integer, db.ForeignKey('categoria_produccion.id'))
 
-    # 🔥 Relación manual (sin foreign key física en SQLite)
-    categoria_produccion = db.relationship(
-        'CategoriaProduccion',
-        primaryjoin="RegistroPulido.categoria_id == CategoriaProduccion.id",
-        viewonly=True
-    )
+    categoria_produccion = db.relationship('CategoriaProduccion')
 
     usuario = db.relationship('Usuario', backref='registros_pulido')
     producto = db.relationship('Producto', backref='registros_pulido')
