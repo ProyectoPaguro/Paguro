@@ -558,14 +558,16 @@ def historial_tareas():
 @app.post("/pulido/registrar")
 @login_required
 def registrar_pulido():
-
     producto_id = request.form.get("producto_id")
     cantidad_str = request.form.get("cantidad") or "1"
-    categoria_id = request.form.get("categoria_id") or None  # <-- FIX
+    categoria_id = request.form.get("categoria_id") or None
+    observaciones = request.form.get("observaciones") or ""
+    acabado = request.form.get("acabado") or ""
 
+    # Validación correcta
     if not producto_id:
         flash("Debes seleccionar un producto.", "warning")
-        return redirect(request.referrer or url_for("produccion"))
+        return redirect(request.referrer or url_for("dashboard"))
 
     try:
         cantidad = int(cantidad_str)
@@ -573,21 +575,25 @@ def registrar_pulido():
             raise ValueError
     except ValueError:
         flash("Cantidad inválida.", "warning")
-        return redirect(request.referrer or url_for("produccion"))
+        return redirect(request.referrer or url_for("dashboard"))
 
     reg = RegistroPulido(
         fecha=date.today(),
         usuario_id=current_user.id,
         producto_id=int(producto_id),
         cantidad=cantidad,
+        estado="pulido",
         categoria_id=int(categoria_id) if categoria_id else None,
-        estado="pulido"
+        observaciones=observaciones,
+        acabado=acabado
     )
 
     db.session.add(reg)
     db.session.commit()
-    flash("Pulido registrado ✅", "success")
-    return redirect(request.referrer or url_for("produccion"))
+
+    flash("Pulido registrado correctamente.", "success")
+    return redirect(request.referrer or url_for("dashboard"))
+
 
 
 
