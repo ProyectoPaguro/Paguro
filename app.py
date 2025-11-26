@@ -396,7 +396,7 @@ def dashboard():
 
 @app.post("/pulido/<int:registro_id>/terminar")
 @login_required
-@require_roles("admin")   # solo admin; luego puedes cambiarlo si quieres
+@require_roles("admin")
 def pulido_terminar(registro_id):
     reg = RegistroPulido.query.get_or_404(registro_id)
 
@@ -404,10 +404,9 @@ def pulido_terminar(registro_id):
         flash("Este registro ya estaba marcado como terminado.", "info")
         return redirect(url_for("dashboard"))
 
-    # --- Buscar o crear el producto en producción ---
-    # Puedes cambiar "Tocancipa" por la bodega que uses para producción final
     BODEGA_PRODUCCION = "Tocancipa"
 
+    # Buscar producto existente
     prod = (
         Producto.query
         .filter_by(
@@ -419,32 +418,31 @@ def pulido_terminar(registro_id):
     )
 
     if not prod:
-        # Si no existe el producto en esa bodega, lo creamos
+        # Crear si no existe
         prod = Producto(
-    nombre=reg.producto,
-    acabado=reg.acabado,
-    cantidad_actual=0,
-    bodega=BODEGA_PRODUCCION,
-    categoria_id=reg.categoria_id   # 👈 USAMOS LA CATEGORÍA DEL EMPLEADO
-)
-
+            nombre=reg.producto,
+            acabado=reg.acabado,
+            cantidad_actual=0,
+            bodega=BODEGA_PRODUCCION,
+            categoria_id=reg.categoria_id
+        )
         db.session.add(prod)
-        db.session.flush()  # para que tenga id
+        db.session.flush()   # obtener id
 
-    # --- Aumentar stock en producción ---
+    # Aumentar stock
     prod.cantidad_actual += reg.cantidad
 
-    # --- Registrar movimiento de producción (Entrada) ---
+    # Movimiento
     mov = ProdMovimiento(
         tipo="Entrada",
         cantidad=reg.cantidad,
-        producto=prod,
+        producto_id=prod.id,   # ✔ CORRECTO
         fecha=datetime.utcnow(),
         bodega=prod.bodega
     )
     db.session.add(mov)
 
-    # --- Marcar el registro de pulido como terminado ---
+    # Marcar como terminado
     reg.estado = "terminado"
 
     db.session.commit()
@@ -454,6 +452,7 @@ def pulido_terminar(registro_id):
         "success"
     )
     return redirect(url_for("dashboard"))
+
 
 
 @app.post("/tareas/agregar")
