@@ -247,7 +247,7 @@
 {% endif %}
 
 {# Solo para operarios que pulen #}
-{% if current_user.rol == 'operario' %}
+{% if current_user.rol in ['admin', 'operario'] %}
 <div class="card shadow-sm mb-4">
   <div class="card-header d-flex align-items-center">
     <span class="me-2">🧽</span>
