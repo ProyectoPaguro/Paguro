@@ -376,6 +376,13 @@ def dashboard():
     )
 
     categorias_produccion = CategoriaProduccion.query.order_by(CategoriaProduccion.nombre.asc()).all()
+    # --- Para select dependiente producto → acabado ---
+    productos_all = Producto.query.order_by(Producto.nombre.asc()).all()
+
+    acabados_por_producto = {}
+    for p in productos_all:
+        acabados_por_producto.setdefault(p.id, []).append(p.acabado)
+
 
     return render_template(
     'dashboard.html',
@@ -390,8 +397,14 @@ def dashboard():
     tareas_pulir_comp=tareas_pulir_comp,
     registros_pulido_hoy_usuario=registros_pulido_hoy_usuario,
     registros_pulido_pendientes=registros_pulido_pendientes,
-    categorias_produccion=categorias_produccion   # <-- NUEVO
+    categorias_produccion=categorias_produccion,
+    
+    # --- ESTOS DOS VAN AQUÍ ---
+    productos_all=productos_all,
+    acabados_por_producto=acabados_por_producto
 )
+
+
 
 
 from sqlalchemy import func
@@ -570,17 +583,15 @@ def historial_tareas():
 @app.post("/pulido/registrar")
 @login_required
 def registrar_pulido():
-    producto_nombre = (request.form.get("producto") or "").strip()
+
+    # Ahora recibimos el ID del producto, no texto
+    producto_id = request.form.get("producto_id")
     acabado = (request.form.get("acabado") or "").strip()
     cantidad_str = request.form.get("cantidad") or "1"
     categoria_id = request.form.get("categoria_id")
     observaciones = request.form.get("observaciones") or ""
 
-    # Validación básica
-    if not producto_nombre:
-        flash("Debes especificar el producto.", "warning")
-        return redirect(request.referrer or url_for("dashboard"))
-
+    # Validar cantidad
     try:
         cantidad = int(cantidad_str)
         if cantidad <= 0:
@@ -589,36 +600,44 @@ def registrar_pulido():
         flash("Cantidad inválida.", "warning")
         return redirect(request.referrer or url_for("dashboard"))
 
-    # Normalizar texto
-    nombre_norm = producto_nombre.lower().strip()
-    acabado_norm = acabado.lower().strip()
+    # Validar producto seleccionado
+    if not producto_id:
+        flash("Debes seleccionar un producto.", "warning")
+        return redirect(request.referrer or url_for("dashboard"))
 
+    # Recuperar producto existente
+    producto = Producto.query.get(producto_id)
+
+    # IMPORTANTÍSIMO: nombre y acabado reales, no texto del usuario
+    producto_nombre = producto.nombre.strip()
+    acabado_norm = acabado.lower().strip()
+    
     BODEGA_PRODUCCION = "Tocancipa"
 
-    # 🔍 BUSCAR PRODUCTO EN INVENTARIO
-    producto = Producto.query.filter(
-        func.lower(Producto.nombre) == nombre_norm,
+    # Si el producto NO existe en Bodega Producción con ese acabado → crearlo
+    prod_inventario = Producto.query.filter(
+        func.lower(Producto.nombre) == producto.nombre.lower(),
         func.lower(Producto.acabado) == acabado_norm,
         Producto.bodega == BODEGA_PRODUCCION
     ).first()
 
-    # 🟢 SI NO EXISTE → CREARLO AUTOMÁTICAMENTE
-    if not producto:
-        producto = Producto(
-            nombre=producto_nombre.strip(),
-            acabado=acabado.strip(),
+    if not prod_inventario:
+        # Crear el producto correctamente en inventario
+        prod_inventario = Producto(
+            nombre=producto_nombre,
+            acabado=acabado,
             cantidad_actual=0,
             bodega=BODEGA_PRODUCCION,
             categoria_id=int(categoria_id) if categoria_id else None
         )
-        db.session.add(producto)
-        db.session.flush()   # para obtener el ID
+        db.session.add(prod_inventario)
+        db.session.flush()  # obtener ID nuevo
 
-    # 🔵 REGISTRAR PULIDO
+    # Crear registro de pulido
     reg = RegistroPulido(
         fecha=date.today(),
         usuario_id=current_user.id,
-        producto_id=producto.id,
+        producto_id=prod_inventario.id,
         cantidad=cantidad,
         estado="pulido",
         categoria_id=int(categoria_id) if categoria_id else None,
@@ -631,6 +650,7 @@ def registrar_pulido():
 
     flash("Pulido registrado correctamente.", "success")
     return redirect(request.referrer or url_for("dashboard"))
+
 
 
 @app.route('/inventario', endpoint='inventario')
