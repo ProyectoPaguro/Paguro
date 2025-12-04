@@ -255,50 +255,56 @@
   </div>
 
   <div class="card-body">
-    <form action="{{ url_for('registrar_pulido') }}" method="POST" class="row g-2">
+<!-- FORMULARIO REGISTRO DE PULIDO -->
+<form action="{{ url_for('registrar_pulido') }}" method="POST" class="row g-2">
 
-      <div class="col-md-4">
+    <!-- SELECT DE PRODUCTO -->
+    <div class="col-md-4">
         <label class="form-label mb-1">Producto</label>
-        <select name="producto_id" id="productoSelect" class="form-select" required>
-          <option value="">Seleccionar producto...</option>
-          {% for p in productos_all %}
-            <option value="{{ p.id }}">{{ p.nombre }}</option>
-          {% endfor %}
+        <select name="producto_nombre" id="productoSelect" class="form-select" required>
+            <option value="">Seleccionar producto...</option>
+            {% for nombre in productos_all %}
+                <option value="{{ nombre }}">{{ nombre }}</option>
+            {% endfor %}
         </select>
-      </div>
+    </div>
 
-      <div class="col-md-3">
+    <!-- SELECT DINÁMICO DE ACABADOS -->
+    <div class="col-md-3">
         <label class="form-label mb-1">Acabado</label>
         <select name="acabado" id="acabadoSelect" class="form-select" required>
-          <option value="">Seleccione un producto primero...</option>
+            <option value="">Seleccione un producto primero...</option>
         </select>
-      </div>
+    </div>
 
-      <div class="col-md-2">
+    <!-- CANTIDAD -->
+    <div class="col-md-2">
         <label class="form-label mb-1">Cantidad</label>
         <input type="number" name="cantidad" class="form-control" min="1" value="1">
-      </div>
+    </div>
 
-      <div class="col-md-4">
+    <!-- CATEGORÍA -->
+    <div class="col-md-3">
         <label class="form-label mb-1">Categoría</label>
         <select name="categoria_id" class="form-select" required>
-          <option value="">Seleccionar categoría...</option>
-          {% for c in categorias_produccion %}
-            <option value="{{ c.id }}">{{ c.nombre }}</option>
-          {% endfor %}
+            <option value="">Seleccionar categoría...</option>
+            {% for c in categorias_produccion %}
+                <option value="{{ c.id }}">{{ c.nombre }}</option>
+            {% endfor %}
         </select>
-      </div>
+    </div>
 
-      <div class="col-md-12">
+    <!-- OBSERVACIONES -->
+    <div class="col-md-12">
         <label class="form-label mb-1">Observaciones</label>
-        <input type="text" name="observaciones" class="form-control" placeholder="Ej: Es Pedido o Para Inventario">
-      </div>
+        <input type="text" name="observaciones" class="form-control" placeholder="Ej: Pedido o Inventario">
+    </div>
 
-      <div class="col-12 mt-2">
+    <div class="col-12 mt-2">
         <button type="submit" class="btn btn-primary btn-sm">Registrar pulido</button>
-      </div>
+    </div>
 
-    </form>
+</form>
   </div>   <!-- cierre correcto del card-body -->
 </div>     <!-- cierre correcto del card -->
 
@@ -353,24 +359,25 @@
 {% endif %}
 
 <script>
-  const acabadosData = {{ acabados_por_producto | tojson }};
-  const productoSelect = document.getElementById("productoSelect");
-  const acabadoSelect = document.getElementById("acabadoSelect");
+    const acabadosData = {{ acabados_por_producto | tojson }};
+    const productoSelect = document.getElementById("productoSelect");
+    const acabadoSelect = document.getElementById("acabadoSelect");
 
-  productoSelect.addEventListener("change", function () {
-    const prodId = this.value;
-    acabadoSelect.innerHTML = "";
+    productoSelect.addEventListener("change", function () {
+        const nombre = this.value;
+        acabadoSelect.innerHTML = "";
 
-    if (!prodId || !acabadosData[prodId]) {
-      acabadoSelect.innerHTML = `<option value="">Seleccione un producto primero...</option>`;
-      return;
-    }
+        if (!nombre || !acabadosData[nombre]) {
+            acabadoSelect.innerHTML = `<option value="">Seleccione un producto primero...</option>`;
+            return;
+        }
 
-    acabadosData[prodId].forEach(acab => {
-      acabadoSelect.innerHTML += `<option value="${acab}">${acab}</option>`;
+        acabadosData[nombre].forEach(acab => {
+            acabadoSelect.innerHTML += `<option value="${acab}">${acab}</option>`;
+        });
     });
-  });
 </script>
+
 
 {% endblock %}
 

@@ -377,37 +377,129 @@ def dashboard():
 
     categorias_produccion = CategoriaProduccion.query.order_by(CategoriaProduccion.nombre.asc()).all()
     # --- Para select dependiente producto → acabado ---
-    productos_all = Producto.query.order_by(Producto.nombre.asc()).all()
+    from sqlalchemy import distinct
 
+@app.route('/')
+@login_required
+def dashboard():
+    total_insumos = Insumo.query.count()
+    total_productos = Producto.query.count()
+
+    ini_hoy_utc, fin_hoy_utc = hoy_local_a_utc_bounds()
+
+    movs_hoy = (
+        Movimiento.query
+        .filter(Movimiento.fecha >= ini_hoy_utc,
+                Movimiento.fecha <= fin_hoy_utc)
+        .count()
+    )
+
+    UMBRAL = 5
+    bajos = Insumo.query.filter(Insumo.cantidad_actual < UMBRAL).count()
+
+    tareas_fundir_pend = (
+        Tarea.query
+        .filter(Tarea.tipo == 'fundir', Tarea.completada.is_(False))
+        .order_by(Tarea.id.desc())
+        .all()
+    )
+
+    tareas_pulir_pend = (
+        Tarea.query
+        .filter(Tarea.tipo == 'pulir', Tarea.completada.is_(False))
+        .order_by(Tarea.id.desc())
+        .all()
+    )
+
+    tareas_fundir_comp = (
+        Tarea.query
+        .filter(Tarea.tipo == 'fundir', Tarea.completada.is_(True))
+        .filter(Tarea.completada_en >= ini_hoy_utc,
+                Tarea.completada_en <= fin_hoy_utc)
+        .order_by(Tarea.completada_en.desc().nullslast())
+        .all()
+    )
+
+    tareas_pulir_comp = (
+        Tarea.query
+        .filter(Tarea.tipo == 'pulir', Tarea.completada.is_(True))
+        .filter(Tarea.completada_en >= ini_hoy_utc,
+                Tarea.completada_en <= fin_hoy_utc)
+        .order_by(Tarea.completada_en.desc().nullslast())
+        .all()
+    )
+
+    # ---------------------------------------
+    #      REGISTROS DE PULIDO
+    # ---------------------------------------
+
+    registros_pulido_hoy_usuario = (
+        RegistroPulido.query
+        .filter(
+            RegistroPulido.fecha == date.today(),
+            RegistroPulido.usuario_id == current_user.id
+        )
+        .order_by(RegistroPulido.id.desc())
+        .all()
+    )
+
+    registros_pulido_pendientes = (
+        RegistroPulido.query
+        .filter(RegistroPulido.estado == "pulido")
+        .order_by(RegistroPulido.fecha.desc(), RegistroPulido.id.desc())
+        .all()
+    )
+
+    categorias_produccion = CategoriaProduccion.query.order_by(
+        CategoriaProduccion.nombre.asc()
+    ).all()
+
+    # ---------------------------------------
+    #   SELECT DEPENDIENTE: PRODUCTO → ACABADOS
+    # ---------------------------------------
+
+    productos_raw = Producto.query.order_by(Producto.nombre.asc()).all()
+
+    # Lista única de nombres de productos
+    productos_all = sorted({p.nombre for p in productos_raw})
+
+    # Diccionario:
+    # { "Base Caiman M": ["Blanco", "Negro", "Mate"], ... }
     acabados_por_producto = {}
-    for p in productos_all:
-        acabados_por_producto.setdefault(p.id, []).append(p.acabado)
 
+    for p in productos_raw:
+        if p.nombre not in acabados_por_producto:
+            acabados_por_producto[p.nombre] = []
+        if p.acabado not in acabados_por_producto[p.nombre]:
+            acabados_por_producto[p.nombre].append(p.acabado)
+
+    # ---------------------------------------
+    #            RENDERIZAR VISTA
+    # ---------------------------------------
 
     return render_template(
-    'dashboard.html',
-    total_insumos=total_insumos,
-    total_productos=total_productos,
-    movs_hoy=movs_hoy,
-    bajos=bajos,
-    umbral=UMBRAL,
-    tareas_fundir_pend=tareas_fundir_pend,
-    tareas_fundir_comp=tareas_fundir_comp,
-    tareas_pulir_pend=tareas_pulir_pend,
-    tareas_pulir_comp=tareas_pulir_comp,
-    registros_pulido_hoy_usuario=registros_pulido_hoy_usuario,
-    registros_pulido_pendientes=registros_pulido_pendientes,
-    categorias_produccion=categorias_produccion,
-    
-    # --- ESTOS DOS VAN AQUÍ ---
-    productos_all=productos_all,
-    acabados_por_producto=acabados_por_producto
-)
+        'dashboard.html',
+        total_insumos=total_insumos,
+        total_productos=total_productos,
+        movs_hoy=movs_hoy,
+        bajos=bajos,
+        umbral=UMBRAL,
 
+        tareas_fundir_pend=tareas_fundir_pend,
+        tareas_fundir_comp=tareas_fundir_comp,
+        tareas_pulir_pend=tareas_pulir_pend,
+        tareas_pulir_comp=tareas_pulir_comp,
 
+        registros_pulido_hoy_usuario=registros_pulido_hoy_usuario,
+        registros_pulido_pendientes=registros_pulido_pendientes,
 
+        categorias_produccion=categorias_produccion,
 
-from sqlalchemy import func
+        # --- NUEVOS PARA EL SELECT DEPENDIENTE ---
+        productos_all=productos_all,
+        acabados_por_producto=acabados_por_producto
+    )
+
 
 @app.post("/pulido/<int:registro_id>/terminar")
 @login_required
@@ -584,12 +676,16 @@ def historial_tareas():
 @login_required
 def registrar_pulido():
 
-    # Ahora recibimos el ID del producto, no texto
-    producto_id = request.form.get("producto_id")
-    acabado = (request.form.get("acabado") or "").strip()
+    producto_nombre = request.form.get("producto_nombre")
+    acabado = request.form.get("acabado")
     cantidad_str = request.form.get("cantidad") or "1"
     categoria_id = request.form.get("categoria_id")
     observaciones = request.form.get("observaciones") or ""
+
+    # Validar selección
+    if not producto_nombre or not acabado:
+        flash("Debes seleccionar producto y acabado.", "warning")
+        return redirect(request.referrer or url_for("dashboard"))
 
     # Validar cantidad
     try:
@@ -600,40 +696,38 @@ def registrar_pulido():
         flash("Cantidad inválida.", "warning")
         return redirect(request.referrer or url_for("dashboard"))
 
-    # Validar producto seleccionado
-    if not producto_id:
-        flash("Debes seleccionar un producto.", "warning")
+    # Buscar el producto base (NO INVENTARIO)
+    producto_base = Producto.query.filter_by(nombre=producto_nombre).first()
+    if not producto_base:
+        flash("El producto seleccionado no existe.", "danger")
         return redirect(request.referrer or url_for("dashboard"))
 
-    # Recuperar producto existente
-    producto = Producto.query.get(producto_id)
-
-    # IMPORTANTÍSIMO: nombre y acabado reales, no texto del usuario
-    producto_nombre = producto.nombre.strip()
+    # Normalizar
+    nombre_norm = producto_nombre.lower().strip()
     acabado_norm = acabado.lower().strip()
-    
+
     BODEGA_PRODUCCION = "Tocancipa"
 
-    # Si el producto NO existe en Bodega Producción con ese acabado → crearlo
+    # Buscar si existe ese producto + acabado en inventario
     prod_inventario = Producto.query.filter(
-        func.lower(Producto.nombre) == producto.nombre.lower(),
+        func.lower(Producto.nombre) == nombre_norm,
         func.lower(Producto.acabado) == acabado_norm,
         Producto.bodega == BODEGA_PRODUCCION
     ).first()
 
+    # Si no existe → crearlo
     if not prod_inventario:
-        # Crear el producto correctamente en inventario
         prod_inventario = Producto(
-            nombre=producto_nombre,
-            acabado=acabado,
+            nombre=producto_nombre.strip(),
+            acabado=acabado.strip(),
             cantidad_actual=0,
             bodega=BODEGA_PRODUCCION,
             categoria_id=int(categoria_id) if categoria_id else None
         )
         db.session.add(prod_inventario)
-        db.session.flush()  # obtener ID nuevo
+        db.session.flush()
 
-    # Crear registro de pulido
+    # Registrar el pulido
     reg = RegistroPulido(
         fecha=date.today(),
         usuario_id=current_user.id,
@@ -650,7 +744,6 @@ def registrar_pulido():
 
     flash("Pulido registrado correctamente.", "success")
     return redirect(request.referrer or url_for("dashboard"))
-
 
 
 @app.route('/inventario', endpoint='inventario')
