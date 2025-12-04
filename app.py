@@ -354,9 +354,7 @@ def dashboard():
                 Tarea.completada_en <= fin_hoy_utc)
         .order_by(Tarea.completada_en.desc().nullslast()).all())
 
-    # ✅ REGISTROS DE PULIDO
-
-    # 1) Lo que el usuario actual ha registrado hoy
+    # REGISTROS DE PULIDO
     registros_pulido_hoy_usuario = (
         RegistroPulido.query
         .filter(
@@ -367,7 +365,6 @@ def dashboard():
         .all()
     )
 
-    # 2) Todos los registros pendientes (estado="pulido")
     registros_pulido_pendientes = (
         RegistroPulido.query
         .filter(RegistroPulido.estado == "pulido")
@@ -376,8 +373,42 @@ def dashboard():
     )
 
     categorias_produccion = CategoriaProduccion.query.order_by(CategoriaProduccion.nombre.asc()).all()
-    # --- Para select dependiente producto → acabado ---
-    from sqlalchemy import distinct
+
+    # -------------------------------------------
+    # SELECT DEPENDIENTE: PRODUCTO → ACABADOS
+    # -------------------------------------------
+    productos_raw = Producto.query.order_by(Producto.nombre.asc()).all()
+
+    productos_all = sorted({p.nombre for p in productos_raw})
+
+    acabados_por_producto = {}
+
+    for p in productos_raw:
+        if p.nombre not in acabados_por_producto:
+            acabados_por_producto[p.nombre] = []
+        if p.acabado not in acabados_por_producto[p.nombre]:
+            acabados_por_producto[p.nombre].append(p.acabado)
+
+    # -------------------------------------------
+    # RETORNO FINAL
+    # -------------------------------------------
+    return render_template(
+        'dashboard.html',
+        total_insumos=total_insumos,
+        total_productos=total_productos,
+        movs_hoy=movs_hoy,
+        bajos=bajos,
+        umbral=UMBRAL,
+        tareas_fundir_pend=tareas_fundir_pend,
+        tareas_fundir_comp=tareas_fundir_comp,
+        tareas_pulir_pend=tareas_pulir_pend,
+        tareas_pulir_comp=tareas_pulir_comp,
+        registros_pulido_hoy_usuario=registros_pulido_hoy_usuario,
+        registros_pulido_pendientes=registros_pulido_pendientes,
+        categorias_produccion=categorias_produccion,
+        productos_all=productos_all,
+        acabados_por_producto=acabados_por_producto
+    )
 
 
 @app.post("/pulido/<int:registro_id>/terminar")
