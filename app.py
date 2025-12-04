@@ -1457,45 +1457,43 @@ def historial_pulido():
 @login_required
 def transferencias():
     destino = request.args.get('destino', '').strip()
-    fecha_desde = request.args.get('desde', '')
-    fecha_hasta = request.args.get('hasta', '')
+    fecha_str = request.args.get('fecha', '')  # <-- SOLO UNA FECHA
 
     q = Transferencia.query.order_by(Transferencia.fecha.desc())
 
-    # FILTRAR POR DESTINO
+    # --- FILTRAR POR DESTINO ---
     if destino:
         q = q.filter(Transferencia.destino == destino)
 
-    # FILTRAR POR FECHA DESDE
-    if fecha_desde:
+    # --- FILTRAR POR FECHA ---
+    if fecha_str:
         try:
-            d = datetime.strptime(fecha_desde, "%Y-%m-%d")
-            q = q.filter(Transferencia.fecha >= d)
+            fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+
+            inicio = datetime.combine(fecha, datetime.min.time())
+            fin = datetime.combine(fecha, datetime.max.time())
+
+            q = q.filter(
+                Transferencia.fecha >= inicio,
+                Transferencia.fecha <= fin
+            )
+
         except:
-            pass
+            flash("Fecha inválida", "warning")
 
-    # FILTRAR POR FECHA HASTA
-    if fecha_hasta:
-        try:
-            h = datetime.strptime(fecha_hasta, "%Y-%m-%d")
-            h = h.replace(hour=23, minute=59, second=59)
-            q = q.filter(Transferencia.fecha <= h)
-        except:
-            pass
+    transferencias = q.all()
 
-    todas = q.all()
-
-    # Para evitar destinos repetidos
+    # Destinos únicos
     destinos_unicos = sorted({t.destino for t in Transferencia.query.all()})
 
     return render_template(
         'transferencias.html',
-        transferencias=todas,
+        transferencias=transferencias,
         sel_destino=destino,
-        sel_desde=fecha_desde,
-        sel_hasta=fecha_hasta,
+        sel_fecha=fecha_str,  # <-- ENVIAMOS 1 SOLO FILTRO
         destinos=destinos_unicos
     )
+
 
 @app.route('/exportar_transferencias')
 @login_required
